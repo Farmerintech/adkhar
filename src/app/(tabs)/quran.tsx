@@ -35,82 +35,83 @@ export default function QuranScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["left", "right", "top"]}>
       {/* Header */}
       <StatusBar barStyle={"light-content"} backgroundColor={PRIMARY} />
+      <View style={{ backgroundColor: BACKGROUND }}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="chevron-back" size={22} color="white" />
+          </TouchableOpacity>
 
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="chevron-back" size={22} color="white" />
-        </TouchableOpacity>
+          <View>
+            <Text style={styles.headerTitle}>Holy Quran</Text>
 
-        <View>
-          <Text style={styles.headerTitle}>Holy Quran</Text>
-
-          <Text style={styles.headerSubtitle}>114 Surahs</Text>
+            <Text style={styles.headerSubtitle}>114 Surahs</Text>
+          </View>
         </View>
-      </View>
 
-      {/* Search */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#8B8B8B" />
+        {/* Search */}
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color="#8B8B8B" />
 
-        <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search Surah..."
-          placeholderTextColor="#999"
-          style={styles.searchInput}
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search Surah..."
+            placeholderTextColor="#999"
+            style={styles.searchInput}
+          />
+        </View>
+
+        {/* Surahs */}
+        <FlatList
+          data={filteredSurahs}
+          keyExtractor={(item: any) => item.number.toString()}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: 40,
+          }}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.card}
+              onPress={() => openSurah(item.number)}
+            >
+              {/* Number */}
+              <View style={styles.numberBadge}>
+                <Text style={styles.numberText}>{item.number}</Text>
+              </View>
+
+              {/* Names */}
+              <View style={styles.info}>
+                <Text style={styles.englishName}>{item.name_english}</Text>
+
+                <Text style={styles.translation}>{item.name_translation}</Text>
+
+                <View style={styles.metaRow}>
+                  <Ionicons name="bookmark-outline" size={12} color="#7B7284" />
+
+                  <Text style={styles.metaText}>
+                    {item.revelation_place} • {item.total_verses} verses
+                  </Text>
+                </View>
+              </View>
+
+              {/* Arabic */}
+              <View style={styles.rightSection}>
+                <Text style={styles.arabicName}>{item.name_arabic}</Text>
+
+                <Ionicons name="chevron-forward" size={20} color={PRIMARY} />
+              </View>
+            </TouchableOpacity>
+          )}
         />
       </View>
-
-      {/* Surahs */}
-      <FlatList
-        data={filteredSurahs}
-        keyExtractor={(item: any) => item.number.toString()}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingBottom: 40,
-        }}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={styles.card}
-            onPress={() => openSurah(item.number)}
-          >
-            {/* Number */}
-            <View style={styles.numberBadge}>
-              <Text style={styles.numberText}>{item.number}</Text>
-            </View>
-
-            {/* Names */}
-            <View style={styles.info}>
-              <Text style={styles.englishName}>{item.name_english}</Text>
-
-              <Text style={styles.translation}>{item.name_translation}</Text>
-
-              <View style={styles.metaRow}>
-                <Ionicons name="bookmark-outline" size={12} color="#7B7284" />
-
-                <Text style={styles.metaText}>
-                  {item.revelation_place} • {item.total_verses} verses
-                </Text>
-              </View>
-            </View>
-
-            {/* Arabic */}
-            <View style={styles.rightSection}>
-              <Text style={styles.arabicName}>{item.name_arabic}</Text>
-
-              <Ionicons name="chevron-forward" size={20} color={PRIMARY} />
-            </View>
-          </TouchableOpacity>
-        )}
-      />
     </SafeAreaView>
   );
 }
@@ -118,7 +119,7 @@ export default function QuranScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BACKGROUND,
+    backgroundColor: PRIMARY,
   },
 
   header: {

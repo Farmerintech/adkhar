@@ -2,10 +2,14 @@ import { useSettings } from "@/app/context/settingsContext";
 // import adhan1 from "@/assets/audio/adhan1.mp3";
 // import adhan2 from "@/assets/audio/adhan2.mp3";
 // import adhan3 from "@/assets/audio/adhan3.mp3";
+
 import { CalculationMethod, Coordinates, Madhab, PrayerTimes } from "adhan";
+
 import * as Location from "expo-location";
 import * as Notifications from "expo-notifications";
+
 import { useEffect, useRef, useState } from "react";
+
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 const PRIMARY = "#4A154B";
@@ -17,6 +21,7 @@ const CARD_MARGIN = 12;
 type Prayer = {
   name: string;
   time: string;
+  date: Date;
 };
 
 export default function PrayerTimesToday() {
@@ -31,93 +36,75 @@ export default function PrayerTimesToday() {
     return date.toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
-      hour12: false,
+      hour12: true,
     });
   };
 
-  const generatePrayerTimes = async () => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-
-      if (status !== "granted") return;
-
-      const location = await Location.getCurrentPositionAsync({});
-
-      const coordinates = new Coordinates(
-        location.coords.latitude,
-        location.coords.longitude,
-      );
-
-      const params = CalculationMethod.MuslimWorldLeague();
-
-      params.madhab = Madhab.Shafi;
-
-      const today = new Date();
-
-      const prayer = new PrayerTimes(coordinates, today, params);
-
-      const prayerList: Prayer[] = [
-        {
-          name: "Subh",
-          time: formatTime(prayer.fajr),
-        },
-        {
-          name: "Sunrise",
-          time: formatTime(prayer.sunrise),
-        },
-        {
-          name: "Zuhr",
-          time: formatTime(prayer.dhuhr),
-        },
-        {
-          name: "Asr",
-          time: formatTime(prayer.asr),
-        },
-        {
-          name: "Maghrib",
-          time: formatTime(prayer.maghrib),
-        },
-        {
-          name: "Isha",
-          time: formatTime(prayer.isha),
-        },
-      ];
-
-      setPrayers(prayerList);
-
-      await schedulePrayerNotifications(prayer);
-
-      findNextPrayer(prayerList);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  const buildPrayerList = (prayer: PrayerTimes): Prayer[] => [
+    {
+      name: "Subh",
+      time: formatTime(prayer.fajr),
+      date: prayer.fajr,
+    },
+    {
+      name: "Sunrise",
+      time: formatTime(prayer.sunrise),
+      date: prayer.sunrise,
+    },
+    {
+      name: "Zuhr",
+      time: formatTime(prayer.dhuhr),
+      date: prayer.dhuhr,
+    },
+    {
+      name: "Asr",
+      time: formatTime(prayer.asr),
+      date: prayer.asr,
+    },
+    {
+      name: "Maghrib",
+      time: formatTime(prayer.maghrib),
+      date: prayer.maghrib,
+    },
+    {
+      name: "Isha",
+      time: formatTime(prayer.isha),
+      date: prayer.isha,
+    },
+  ];
 
   const findNextPrayer = (prayerList: Prayer[]) => {
     const now = new Date();
 
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const validPrayers = prayerList.filter(
+      (prayer) => prayer.name !== "Sunrise",
+    );
 
-    let nextIndex = prayerList.findIndex((prayer) => {
-      const [hour, minute] = prayer.time.split(":").map(Number);
+    let nextPrayer = validPrayers.find(
+      (prayer) => prayer.date.getTime() > now.getTime(),
+    );
 
-      const prayerMinutes = hour * 60 + minute;
-
-      return prayerMinutes > currentMinutes;
-    });
-
-    if (nextIndex === -1) {
-      nextIndex = 0;
+    // all today's prayers have passed
+    if (!nextPrayer) {
+      nextPrayer = validPrayers[0];
     }
 
-    setNextPrayerIndex(nextIndex);
+    const index = prayerList.findIndex(
+      (prayer) => prayer.name === nextPrayer?.name,
+    );
+
+    setNextPrayerIndex(index);
 
     setTimeout(() => {
       scrollRef.current?.scrollTo({
-        x: nextIndex * (CARD_WIDTH + CARD_MARGIN),
+        x: index * (CARD_WIDTH + CARD_MARGIN),
         animated: true,
       });
     }, 300);
+
+    console.log("Current:", now.toString());
+
+    console.log("Next Prayer:", nextPrayer?.name, nextPrayer?.date.toString());
   };
 
   const schedulePrayerNotifications = async (prayer: PrayerTimes) => {
@@ -132,6 +119,13 @@ export default function PrayerTimesToday() {
     await Notifications.cancelAllScheduledNotificationsAsync();
 
     const notificationPrayers = [
+      // ✅ Test notification (fires in 1 minute)
+      // {
+      //   name: "TEST",
+      //   date: new Date(Date.now() + 60 * 1000),
+      // },
+
+      // Actual prayer notifications
       {
         name: "Fajr",
         date: prayer.fajr,
@@ -157,14 +151,57 @@ export default function PrayerTimesToday() {
     for (const item of notificationPrayers) {
       if (item.date <= new Date()) continue;
 
+      console.log(
+        `Scheduling ${item.name} at ${item.date.toLocaleTimeString()}`,
+      );
+
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: `🕌 ${item.name} Prayer`,
-          body: `It is time for ${item.name} prayer.`,
-          sound: soundMap[settings.adhanVoice],
+          title:
+            item.name === "TEST"
+              ? "🧪 Test Notification"
+              : `🕌 ${item.name} Prayer`,
+          body:
+            item.name === "TEST"
+              ? "If you can hear the adhan, notifications are working!"
+              : `It is time for ${item.name} prayer.`,
+          sound: soundMap[settings.adhanVoice] as any,
         },
-        trigger: item.date as any,
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: item.date,
+        },
       });
+    }
+  };
+  const generatePrayerTimes = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+
+      if (status !== "granted") return;
+
+      const location = await Location.getCurrentPositionAsync({});
+
+      const coordinates = new Coordinates(
+        location.coords.latitude,
+        location.coords.longitude,
+      );
+
+      const params = CalculationMethod.MuslimWorldLeague();
+
+      params.madhab = Madhab.Shafi;
+
+      const prayer = new PrayerTimes(coordinates, new Date(), params);
+
+      const prayerList = buildPrayerList(prayer);
+
+      setPrayers(prayerList);
+
+      findNextPrayer(prayerList);
+
+      await schedulePrayerNotifications(prayer);
+    } catch (error) {
+      console.log("Prayer Error:", error);
     }
   };
 

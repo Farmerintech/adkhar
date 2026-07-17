@@ -40,59 +40,60 @@ export default function DuaScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <StatusBar barStyle={"light-content"} backgroundColor={PRIMARY} />
-
-      <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={22} color="white" />
-        </Pressable>
-
-        <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Duas & Adhkar</Text>
-
-          <Text style={styles.headerSubtitle}>
-            Supplications for every moment
-          </Text>
-        </View>
-      </View>
-
-      {/* Content */}
-      <FlatList
-        data={duasData}
-        keyExtractor={(item) => item.id.toString()}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item, index }) => (
-          <Pressable
-            onPress={() => moveToAdkharPage(item.id)}
-            style={({ pressed }) => [
-              styles.card,
-              pressed && styles.cardPressed,
-            ]}
-          >
-            <View style={styles.leftSection}>
-              <View style={styles.iconContainer}>
-                <Ionicons
-                  name={icons[index % icons.length] as any}
-                  size={24}
-                  color={PRIMARY}
-                />
-              </View>
-
-              <View>
-                <Text style={styles.title}>{item.name}</Text>
-
-                <Text style={styles.subtitle}>
-                  Tap to explore supplications
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.arrowContainer}>
-              <Ionicons name="chevron-forward" size={18} color={PRIMARY} />
-            </View>
+      <View style={{ backgroundColor: LIGHT_BG }}>
+        <View style={styles.header}>
+          <Pressable style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={22} color="white" />
           </Pressable>
-        )}
-      />
+
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>Duas & Adhkar</Text>
+
+            <Text style={styles.headerSubtitle}>
+              Supplications for every moment
+            </Text>
+          </View>
+        </View>
+
+        {/* Content */}
+        <FlatList
+          data={duasData}
+          keyExtractor={(item) => item.id.toString()}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+          renderItem={({ item, index }) => (
+            <Pressable
+              onPress={() => moveToAdkharPage(item.id)}
+              style={({ pressed }) => [
+                styles.card,
+                pressed && styles.cardPressed,
+              ]}
+            >
+              <View style={styles.leftSection}>
+                <View style={styles.iconContainer}>
+                  <Ionicons
+                    name={icons[index % icons.length] as any}
+                    size={24}
+                    color={PRIMARY}
+                  />
+                </View>
+
+                <View>
+                  <Text style={styles.title}>{item.name}</Text>
+
+                  <Text style={styles.subtitle}>
+                    Tap to explore supplications
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.arrowContainer}>
+                <Ionicons name="chevron-forward" size={18} color={PRIMARY} />
+              </View>
+            </Pressable>
+          )}
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -100,7 +101,7 @@ export default function DuaScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: LIGHT_BG,
+    backgroundColor: PRIMARY,
   },
 
   header: {

@@ -1,7 +1,7 @@
 import * as data from "@/app/utils/duas.json";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ScrollView,
   StatusBar,
@@ -17,7 +17,6 @@ const BG = "#F8F5FA";
 
 export default function Adkhar() {
   const router = useRouter();
-
   const { category } = useLocalSearchParams();
 
   const duasData = data.data.duas;
@@ -28,8 +27,17 @@ export default function Adkhar() {
   );
 
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [count, setCount] = useState(0);
 
   const currentDua = realData[currentIndex];
+
+  // reset counter when changing adhkar
+  useEffect(() => {
+    setCount(0);
+  }, [currentIndex]);
+
+  const repeat = Number(currentDua?.repeat || 0);
+  const showCounter = repeat >= 50;
 
   const title =
     typeof category === "string"
@@ -45,71 +53,110 @@ export default function Adkhar() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <StatusBar barStyle={"light-content"} backgroundColor={PRIMARY} />
+    <SafeAreaView
+      style={styles.container}
+      edges={["left", "right", "top", "bottom"]}
+    >
+      <StatusBar barStyle="light-content" backgroundColor={PRIMARY} />
+      <View style={{ backgroundColor: BG, flex: 1 }}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="chevron-back" size={22} color="white" />
+          </TouchableOpacity>
 
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={22} color="white" />
-        </TouchableOpacity>
-
-        <View>
-          <Text style={styles.headerTitle}>{title} Adhkar</Text>
-
-          <Text style={styles.headerSubtitle}>
-            {currentIndex + 1} of {realData.length}
-          </Text>
+          <View>
+            <Text style={styles.headerTitle}>{title} Adhkar</Text>
+            <Text style={styles.headerSubtitle}>
+              {currentIndex + 1} of {realData.length}
+            </Text>
+          </View>
         </View>
-      </View>
 
-      {/* Dua Card */}
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-        <View style={styles.card}>
-          <Text style={styles.repeat}>Repeat {currentDua.repeat} times</Text>
-
-          <Text style={styles.arabic}>{currentDua.arabic}</Text>
-
-          <Text style={styles.transliteration}>
-            {currentDua.transliteration}
-          </Text>
-
-          <Text style={styles.translation}>{currentDua.translation}</Text>
-        </View>
-      </ScrollView>
-
-      {/* Bottom Controls */}
-      <View style={styles.controls}>
-        <TouchableOpacity
-          disabled={currentIndex === 0}
-          style={[
-            styles.navButton,
-            currentIndex === 0 && styles.disabledButton,
-          ]}
-          onPress={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
+        {/* Scrollable Content */}
+        <ScrollView
+          style={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.content}
         >
-          <Ionicons name="arrow-back" size={22} color="white" />
-        </TouchableOpacity>
+          <View style={styles.card}>
+            <Text style={styles.repeat}>Repeat {repeat} times</Text>
 
-        <View style={styles.counter}>
-          <Text style={styles.counterText}>{currentIndex + 1}</Text>
+            <Text style={styles.arabic}>{currentDua.arabic}</Text>
+
+            <Text style={styles.transliteration}>
+              {currentDua.transliteration}
+            </Text>
+
+            <Text style={styles.translation}>{currentDua.translation}</Text>
+
+            {/* Tasbih Counter */}
+            {showCounter && (
+              <View style={styles.tasbihContainer}>
+                <Text style={styles.tasbihLabel}>Tasbih Counter</Text>
+
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[
+                    styles.tasbihButton,
+                    count >= repeat && styles.tasbihDone,
+                  ]}
+                  onPress={() => {
+                    if (count < repeat) setCount((c) => c + 1);
+                  }}
+                >
+                  <Text style={styles.tasbihCount}>{count}</Text>
+                  <Text style={styles.tasbihTarget}>/ {repeat}</Text>
+                </TouchableOpacity>
+
+                {count >= repeat && (
+                  <Text style={styles.completedText}>Completed ✓</Text>
+                )}
+
+                <TouchableOpacity
+                  style={styles.resetBtn}
+                  onPress={() => setCount(0)}
+                >
+                  <Text style={styles.resetText}>Reset Counter</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+
+        {/* Fixed Bottom Controls */}
+        <View style={styles.controls}>
+          <TouchableOpacity
+            disabled={currentIndex === 0}
+            style={[
+              styles.navButton,
+              currentIndex === 0 && styles.disabledButton,
+            ]}
+            onPress={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
+          >
+            <Ionicons name="arrow-back" size={22} color="white" />
+          </TouchableOpacity>
+
+          <View style={styles.counter}>
+            <Text style={styles.counterText}>{currentIndex + 1}</Text>
+          </View>
+
+          <TouchableOpacity
+            disabled={currentIndex === realData.length - 1}
+            style={[
+              styles.navButton,
+              currentIndex === realData.length - 1 && styles.disabledButton,
+            ]}
+            onPress={() =>
+              setCurrentIndex((prev) => Math.min(prev + 1, realData.length - 1))
+            }
+          >
+            <Ionicons name="arrow-forward" size={22} color="white" />
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          disabled={currentIndex === realData.length - 1}
-          style={[
-            styles.navButton,
-            currentIndex === realData.length - 1 && styles.disabledButton,
-          ]}
-          onPress={() =>
-            setCurrentIndex((prev) => Math.min(prev + 1, realData.length - 1))
-          }
-        >
-          <Ionicons name="arrow-forward" size={22} color="white" />
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -118,7 +165,7 @@ export default function Adkhar() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: PRIMARY,
   },
 
   header: {
@@ -149,9 +196,13 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
+  scroll: {
+    flex: 1,
+  },
+
   content: {
     padding: 20,
-    flexGrow: 1,
+    paddingBottom: 30,
   },
 
   card: {
@@ -200,11 +251,72 @@ const styles = StyleSheet.create({
     color: "#111827",
   },
 
+  tasbihContainer: {
+    marginTop: 30,
+    alignItems: "center",
+  },
+
+  tasbihLabel: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: PRIMARY,
+    marginBottom: 14,
+  },
+
+  tasbihButton: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: PRIMARY,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  tasbihDone: {
+    backgroundColor: "#15803D",
+  },
+
+  tasbihCount: {
+    color: "white",
+    fontSize: 38,
+    fontWeight: "800",
+  },
+
+  tasbihTarget: {
+    color: "#E5D6E5",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+
+  completedText: {
+    marginTop: 14,
+    color: "#15803D",
+    fontWeight: "800",
+    fontSize: 16,
+  },
+
+  resetBtn: {
+    marginTop: 16,
+    backgroundColor: "#F3ECF5",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+
+  resetText: {
+    color: PRIMARY,
+    fontWeight: "700",
+  },
+
   controls: {
     flexDirection: "row",
     justifyContent: "space-between",
-    padding: 20,
     alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: BG,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
   },
 
   navButton: {

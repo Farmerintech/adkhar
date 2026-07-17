@@ -1,13 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import {
+    Pressable,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useSettings } from "../context/settingsContext";
+import { useAuth } from "../context/userContext";
 
 const PRIMARY = "#4A154B";
 const GOLD = "#D4AF37";
@@ -24,8 +28,7 @@ export default function SettingsScreen() {
     setAdhanVoice,
   } = useSettings();
 
-  const userName = "Yakub Shakirudeen"; // Replace with auth user
-
+  const { user } = useAuth() || "yakub";
   const voices = useMemo(
     () => [
       {
@@ -78,107 +81,120 @@ export default function SettingsScreen() {
       </View>
     </TouchableOpacity>
   );
-
+  const PRIMARY = "#4A154B";
+  const LIGHT_BG = "#F8F5FA";
+  const router = useRouter();
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* HEADER */}
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: PRIMARY }}
+      edges={["left", "right", "top"]}
+    >
+      <View style={{ backgroundColor: LIGHT_BG }}>
+        <View style={styles.header}>
+          <Pressable style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={22} color="white" />
+          </Pressable>
 
-      <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {userName.charAt(0).toUpperCase()}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>{user?.name}</Text>
+
+            <Text style={styles.headerSubtitle}>
+              Personalize your Adkhar experience
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* HEADER */}
+
+        {/* NOTIFICATIONS */}
+
+        <Text style={styles.sectionTitle}>Notifications</Text>
+
+        <SettingRow
+          icon="sunny-outline"
+          title="Morning & Evening Adhkar"
+          subtitle="Receive daily adhkar reminders"
+          value={settings.morningEveningNotification}
+          onPress={toggleMorningEvening}
+        />
+
+        <SettingRow
+          icon="notifications-outline"
+          title="Prayer Time Notifications"
+          subtitle="Receive notifications for each prayer"
+          value={settings.prayerNotification}
+          onPress={togglePrayerNotification}
+        />
+
+        <SettingRow
+          icon="moon-outline"
+          title="Tahajjud Reminder"
+          subtitle="Reminder before the last third of the night"
+          value={settings.tahajjudReminder}
+          onPress={toggleTahajjudReminder}
+        />
+
+        {/* ADHAN VOICES */}
+
+        <Text style={styles.sectionTitle}>Adhan Voice</Text>
+
+        {voices.map((voice: any) => {
+          const selected = settings.adhanVoice === voice.key;
+
+          return (
+            <TouchableOpacity
+              key={voice.key}
+              activeOpacity={0.8}
+              style={[styles.voiceCard, selected && styles.voiceSelected]}
+              onPress={() => setAdhanVoice(voice.key as any)}
+            >
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[
+                    styles.voiceTitle,
+                    selected && styles.voiceTitleSelected,
+                  ]}
+                >
+                  {voice.title}
+                </Text>
+
+                <Text style={styles.voiceSubtitle}>{voice.subtitle}</Text>
+              </View>
+
+              <View
+                style={[
+                  styles.radioOuter,
+                  selected && styles.radioOuterSelected,
+                ]}
+              >
+                {selected && <View style={styles.radioInner} />}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+
+        {/* APP INFO */}
+
+        <Text style={styles.sectionTitle}>About Adkhar</Text>
+
+        <View style={styles.infoCard}>
+          <Ionicons name="moon" size={28} color={GOLD} />
+
+          <Text style={styles.appName}>Adkhar</Text>
+
+          <Text style={styles.version}>Version 1.0.0</Text>
+
+          <Text style={styles.infoText}>
+            Your companion for Quran, Adhkar, Prayer Times and Islamic
+            reminders.
           </Text>
         </View>
 
-        <Text style={styles.greeting}>Assalamu Alaikum 🌙</Text>
-
-        <Text style={styles.name}>{userName}</Text>
-
-        <Text style={styles.subtitle}>Personalize your Adkhar experience</Text>
-      </View>
-
-      {/* NOTIFICATIONS */}
-
-      <Text style={styles.sectionTitle}>Notifications</Text>
-
-      <SettingRow
-        icon="sunny-outline"
-        title="Morning & Evening Adhkar"
-        subtitle="Receive daily adhkar reminders"
-        value={settings.morningEveningNotification}
-        onPress={toggleMorningEvening}
-      />
-
-      <SettingRow
-        icon="notifications-outline"
-        title="Prayer Time Notifications"
-        subtitle="Receive notifications for each prayer"
-        value={settings.prayerNotification}
-        onPress={togglePrayerNotification}
-      />
-
-      <SettingRow
-        icon="moon-outline"
-        title="Tahajjud Reminder"
-        subtitle="Reminder before the last third of the night"
-        value={settings.tahajjudReminder}
-        onPress={toggleTahajjudReminder}
-      />
-
-      {/* ADHAN VOICES */}
-
-      <Text style={styles.sectionTitle}>Adhan Voice</Text>
-
-      {voices.map((voice: any) => {
-        const selected = settings.adhanVoice === voice.key;
-
-        return (
-          <TouchableOpacity
-            key={voice.key}
-            activeOpacity={0.8}
-            style={[styles.voiceCard, selected && styles.voiceSelected]}
-            onPress={() => setAdhanVoice(voice.key as any)}
-          >
-            <View style={{ flex: 1 }}>
-              <Text
-                style={[
-                  styles.voiceTitle,
-                  selected && styles.voiceTitleSelected,
-                ]}
-              >
-                {voice.title}
-              </Text>
-
-              <Text style={styles.voiceSubtitle}>{voice.subtitle}</Text>
-            </View>
-
-            <View
-              style={[styles.radioOuter, selected && styles.radioOuterSelected]}
-            >
-              {selected && <View style={styles.radioInner} />}
-            </View>
-          </TouchableOpacity>
-        );
-      })}
-
-      {/* APP INFO */}
-
-      <Text style={styles.sectionTitle}>About Adkhar</Text>
-
-      <View style={styles.infoCard}>
-        <Ionicons name="moon" size={28} color={GOLD} />
-
-        <Text style={styles.appName}>Adkhar</Text>
-
-        <Text style={styles.version}>Version 1.0.0</Text>
-
-        <Text style={styles.infoText}>
-          Your companion for Quran, Adhkar, Prayer Times and Islamic reminders.
-        </Text>
-      </View>
-
-      <View style={{ height: 40 }} />
-    </ScrollView>
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -187,15 +203,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: PAPER,
     paddingHorizontal: 20,
-  },
-
-  header: {
-    backgroundColor: PRIMARY,
-    borderRadius: 30,
-    paddingVertical: 30,
-    alignItems: "center",
-    marginTop: 20,
-    marginBottom: 30,
   },
 
   avatar: {
@@ -218,6 +225,36 @@ const styles = StyleSheet.create({
     color: "#FDE68A",
     fontWeight: "700",
     fontSize: 15,
+  },
+  header: {
+    backgroundColor: PRIMARY,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 35,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  backButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 15,
+  },
+
+  headerTitle: {
+    color: "white",
+    fontSize: 24,
+    fontWeight: "800",
+  },
+
+  headerSubtitle: {
+    color: "#E6D7E7",
+    marginTop: 4,
+    fontSize: 13,
   },
 
   name: {

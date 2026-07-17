@@ -84,94 +84,96 @@ export default function SurahReader() {
   }, [verses]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle={"light-content"} backgroundColor={PRIMARY} />
+    <SafeAreaView style={styles.container} edges={["left", "right", "top"]}>
+      <View style={{ backgroundColor: PAPER, flex: 1, paddingBottom: 50 }}>
+        <StatusBar barStyle={"light-content"} backgroundColor={PRIMARY} />
 
-      {/* HEADER */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="chevron-back" size={24} color="white" />
-        </TouchableOpacity>
+        {/* HEADER */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="chevron-back" size={24} color="white" />
+          </TouchableOpacity>
 
-        <View style={{ flex: 1 }}>
-          <Text style={styles.surahTitle}>{surah.name_english}</Text>
-          <Text style={styles.surahSubtitle}>{surah.name_translation}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.surahTitle}>{surah.name_english}</Text>
+            <Text style={styles.surahSubtitle}>{surah.name_translation}</Text>
+          </View>
+
+          <TouchableOpacity style={styles.headerButton}>
+            <Ionicons name="bookmark-outline" size={22} color="white" />
+          </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.headerButton}>
-          <Ionicons name="bookmark-outline" size={22} color="white" />
-        </TouchableOpacity>
-      </View>
+        {/* PAGES */}
+        <PagerView style={{ flex: 1 }} initialPage={0} layoutDirection="rtl">
+          {pages.map((page, pageIndex) => (
+            <ScrollView
+              key={pageIndex}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.pageContainer}
+            >
+              <View style={styles.page}>
+                {/* Decorative Corners */}
+                <Text style={styles.topLeft}>❁</Text>
+                <Text style={styles.topRight}>❁</Text>
+                <Text style={styles.bottomLeft}>❁</Text>
+                <Text style={styles.bottomRight}>❁</Text>
 
-      {/* PAGES */}
-      <PagerView style={{ flex: 1 }} initialPage={0} layoutDirection="rtl">
-        {pages.map((page, pageIndex) => (
-          <ScrollView
-            key={pageIndex}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.pageContainer}
-          >
-            <View style={styles.page}>
-              {/* Decorative Corners */}
-              <Text style={styles.topLeft}>❁</Text>
-              <Text style={styles.topRight}>❁</Text>
-              <Text style={styles.bottomLeft}>❁</Text>
-              <Text style={styles.bottomRight}>❁</Text>
+                {/* Surah Card */}
+                {pageIndex === 0 && (
+                  <View style={styles.surahCard}>
+                    <Text style={styles.arabicTitle}>{surah.name_arabic}</Text>
 
-              {/* Surah Card */}
-              {pageIndex === 0 && (
-                <View style={styles.surahCard}>
-                  <Text style={styles.arabicTitle}>{surah.name_arabic}</Text>
+                    <Text style={styles.translation}>
+                      {surah.name_translation}
+                    </Text>
 
-                  <Text style={styles.translation}>
-                    {surah.name_translation}
-                  </Text>
-
-                  <Text style={styles.meta}>
-                    {surah.revelation_place.toUpperCase()} •{" "}
-                    {surah.verses_count} Ayat
-                  </Text>
-                </View>
-              )}
-
-              {/* Bismillah */}
-              {pageIndex === 0 &&
-                Number(id) !== 9 &&
-                surah.bismillah_pre !== false && (
-                  <Text style={styles.bismillah}>
-                    بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
-                  </Text>
+                    <Text style={styles.meta}>
+                      {surah.revelation_place.toUpperCase()} •{" "}
+                      {surah.verses_count} Ayat
+                    </Text>
+                  </View>
                 )}
 
-              {/* Quran Text */}
-              <Text style={styles.quranText}>
-                {page.map((verse: any) => (
-                  <Text key={verse.ayah}>
-                    {verse.arabic}{" "}
-                    <Text style={styles.ayahNumber}>
-                      ﴿{toArabicNumber(verse.ayah)}﴾
-                    </Text>{" "}
-                  </Text>
-                ))}
-              </Text>
+                {/* Bismillah */}
+                {pageIndex === 0 &&
+                  Number(id) !== 9 &&
+                  surah.bismillah_pre !== false && (
+                    <Text style={styles.bismillah}>
+                      بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+                    </Text>
+                  )}
 
-              {/* Footer */}
-              <View style={styles.footer}>
-                <View style={styles.line} />
-
-                <Text style={styles.pageNumber}>
-                  ﴿{toArabicNumber(pageIndex + 1)}﴾
+                {/* Quran Text */}
+                <Text style={styles.quranText}>
+                  {page.map((verse: any) => (
+                    <Text key={verse.ayah}>
+                      {verse.arabic}{" "}
+                      <Text style={styles.ayahNumber}>
+                        ﴿{toArabicNumber(verse.ayah)}﴾
+                      </Text>{" "}
+                    </Text>
+                  ))}
                 </Text>
 
-                <View style={styles.line} />
+                {/* Footer */}
+                <View style={styles.footer}>
+                  <View style={styles.line} />
+
+                  <Text style={styles.pageNumber}>
+                    ﴿{toArabicNumber(pageIndex + 1)}﴾
+                  </Text>
+
+                  <View style={styles.line} />
+                </View>
               </View>
-            </View>
-          </ScrollView>
-        ))}
-      </PagerView>
+            </ScrollView>
+          ))}
+        </PagerView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -179,7 +181,7 @@ export default function SurahReader() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: PAPER,
+    backgroundColor: PRIMARY,
   },
 
   emptyContainer: {

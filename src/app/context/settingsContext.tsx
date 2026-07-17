@@ -21,6 +21,7 @@ type SettingsContextType = {
   toggleMorningEvening: () => Promise<void>;
   togglePrayerNotification: () => Promise<void>;
   toggleTahajjudReminder: () => Promise<void>;
+  toggleAdhkarReminder: () => Promise<void>;
 
   setAdhanVoice: (voice: AdhanVoice) => Promise<void>;
 
@@ -36,7 +37,6 @@ const SettingsContext = createContext<SettingsContextType | undefined>(
 
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
-
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,11 +46,9 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const loadSettings = async () => {
     try {
       const saved = await getSettings();
-
       setSettings(saved ?? DEFAULT_SETTINGS);
     } catch (error) {
       console.log(error);
-
       setSettings(DEFAULT_SETTINGS);
     } finally {
       setLoading(false);
@@ -59,7 +57,6 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
 
   const persistSettings = async (newSettings: AppSettings) => {
     setSettings(newSettings);
-
     await saveSettings(newSettings);
   };
 
@@ -90,6 +87,10 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     await updateSetting("tahajjudReminder", !settings.tahajjudReminder);
   };
 
+  const toggleAdhkarReminder = async () => {
+    await updateSetting("adhkarReminder", !settings.adhkarReminder);
+  };
+
   const setAdhanVoice = async (voice: AdhanVoice) => {
     await updateSetting("adhanVoice", voice);
   };
@@ -102,6 +103,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         toggleMorningEvening,
         togglePrayerNotification,
         toggleTahajjudReminder,
+        toggleAdhkarReminder,
         setAdhanVoice,
         updateSetting,
       }}

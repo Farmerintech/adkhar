@@ -41,7 +41,18 @@
           "imageWidth": 76
         }
       ],
-      "expo-notifications",
+
+      [
+        "expo-notifications",
+        {
+          "sounds": [
+            "./assets/audio/adhan1.mp3",
+            "./assets/audio/adhan2.mp3",
+            "./assets/audio/adhan3.mp3"
+          ]
+        }
+      ],
+
       "expo-secure-store",
       "expo-image",
       "expo-status-bar",

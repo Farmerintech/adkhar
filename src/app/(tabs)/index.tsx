@@ -11,12 +11,16 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 import AsmaulHusnaSection from "../../../services/asmaullah";
 import PremiumIslamicCalendar from "../../../services/monthly-calender";
 import PrayerCalendarModal from "../../../services/prayerTime";
 // import PrayerTimesToday from "../../../services/prayerTimeToday";
+import PrayerTimesToday from "../../../services/prayerTimeToday";
 import TodayDateCard from "../../../services/today";
 import VerseOfTheDay from "../../../services/verseOfTheDay";
 
@@ -31,11 +35,16 @@ export default function Index() {
   const handleVisible = () => {
     setCalendarVisible((prev) => !prev);
   };
-  return (
-    <SafeAreaView style={styles.container}>
-      {/* HEADER */}
-      <StatusBar barStyle={"light-content"} backgroundColor={PRIMARY} />
+  const inset = useSafeAreaInsets();
 
+  return (
+    <SafeAreaView style={styles.container} edges={["left", "right", "top"]}>
+      {/* HEADER */}
+      <StatusBar
+        translucent={true}
+        backgroundColor={"transparent"}
+        barStyle={"light-content"}
+      />
       <View style={styles.fixedTop}>
         <TodayDateCard handleVisible={() => setIsVisible(true)} />
 
@@ -52,7 +61,7 @@ export default function Index() {
       >
         <AdkharCard />
         <VerseOfTheDay />
-        {/* <PrayerTimesToday /> */}
+        <PrayerTimesToday />
         <AsmaulHusnaSection />
       </ScrollView>
 
@@ -94,7 +103,7 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: PRIMARY,
   },
 
   fixedTop: {
