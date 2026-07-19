@@ -13,7 +13,11 @@ export default function AdhkarReminder() {
 
   const scheduleReminders = async () => {
     if (!settings.adhkarReminder) return;
-
+    const soundMap = {
+      alafasy: "adhan11.wav",
+      sudais: "adhan22.wav",
+      muaiqly: "adhan33.wav",
+    };
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
 
@@ -53,7 +57,7 @@ export default function AdhkarReminder() {
           content: {
             title: "🌅 Morning Adhkar",
             body: "Don't forget your morning remembrance.",
-            sound: "default",
+            sound: soundMap[settings.adhanVoice],
           },
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -68,7 +72,7 @@ export default function AdhkarReminder() {
           content: {
             title: "🌇 Evening Adhkar",
             body: "Don't forget your evening remembrance.",
-            sound: "default",
+            sound: soundMap[settings.adhanVoice],
           },
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.DATE,

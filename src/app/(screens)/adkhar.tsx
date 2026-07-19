@@ -1,4 +1,5 @@
 import * as data from "@/app/utils/duas.json";
+import * as morningEvening from "@/app/utils/morningEveningAdkhar.json";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -19,8 +20,13 @@ export default function Adkhar() {
   const router = useRouter();
   const { category } = useLocalSearchParams();
 
-  const duasData = data.data.duas;
-
+  let duasData: any = data.data.duas;
+  if (category === "morning") {
+    duasData = morningEvening.morning;
+  }
+  if (category === "evening") {
+    duasData = morningEvening.evening;
+  }
   const realData = useMemo(
     () => duasData.filter((item: any) => item.category === category),
     [category],

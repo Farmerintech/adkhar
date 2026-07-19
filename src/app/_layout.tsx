@@ -3,6 +3,7 @@ import * as Notifications from "expo-notifications";
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar, useColorScheme } from "react-native";
+import AdhkarReminder from "../../services/dkharReminder";
 import { NotificationProvider } from "./context/notificationsContext";
 import { SettingsProvider } from "./context/settingsContext";
 import { AuthProvider } from "./context/userContext";
@@ -34,6 +35,7 @@ export default function TabLayout() {
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="(screens)" />
             </Stack>
+            <AdhkarReminder />
           </SettingsProvider>
           {/* <AppTabs /> */}
         </NotificationProvider>

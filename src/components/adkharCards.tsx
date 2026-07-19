@@ -1,5 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 const PRIMARY = "#4A154B";
 
@@ -9,34 +16,47 @@ const adkhars = [
     icon: "sunny-outline",
     color: "#FFF4D6",
     iconColor: "#E6A700",
+    to: "morning",
   },
   {
     title: "Evening",
     icon: "moon-outline",
     color: "#EFE8FF",
     iconColor: "#6B46C1",
+    to: "evening",
   },
   {
     title: "Sleep",
     icon: "bed-outline",
     color: "#E8F5FF",
     iconColor: "#0284C7",
+    to: "sleep",
   },
   {
     title: "Travel",
     icon: "airplane-outline",
     color: "#EAFBF1",
     iconColor: "#16A34A",
+    to: "travel",
   },
   {
     title: "Others",
     icon: "apps-outline",
     color: "#FFEAEA",
     iconColor: "#DC2626",
+    to: "others",
   },
 ];
 
 export const AdkharCard = () => {
+  const router = useRouter();
+  const goToDesiredScreen = (category: any) => {
+    if (category === "others") {
+      router.push(`/(tabs)/duas`);
+    } else {
+      router.push(`/(screens)/adkhar?category=${category}`);
+    }
+  };
   return (
     <View>
       <Text style={styles.sectionTitle}>Adhkar Categories</Text>
@@ -48,7 +68,10 @@ export const AdkharCard = () => {
         keyExtractor={(item) => item.title}
         contentContainerStyle={styles.listContainer}
         renderItem={({ item }) => (
-          <View style={[styles.card, { backgroundColor: item.color }]}>
+          <TouchableOpacity
+            onPress={() => goToDesiredScreen(item.to)}
+            style={[styles.card, { backgroundColor: item.color }]}
+          >
             <View
               style={[
                 styles.iconContainer,
@@ -63,7 +86,7 @@ export const AdkharCard = () => {
             </View>
 
             <Text style={styles.title}>{item.title}</Text>
-          </View>
+          </TouchableOpacity>
         )}
       />
     </View>

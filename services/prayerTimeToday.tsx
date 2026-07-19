@@ -111,21 +111,14 @@ export default function PrayerTimesToday() {
     if (!settings.prayerNotification) return;
 
     const soundMap = {
-      alafasy: "adhan1.mp3",
-      sudais: "adhan2.mp3",
-      muaiqly: "adhan3.mp3",
+      alafasy: "adhan11.wav",
+      sudais: "adhan22.wav",
+      muaiqly: "adhan33.wav",
     };
 
     await Notifications.cancelAllScheduledNotificationsAsync();
 
     const notificationPrayers = [
-      // ✅ Test notification (fires in 1 minute)
-      // {
-      //   name: "TEST",
-      //   date: new Date(Date.now() + 60 * 1000),
-      // },
-
-      // Actual prayer notifications
       {
         name: "Fajr",
         date: prayer.fajr,
@@ -286,13 +279,18 @@ const styles = StyleSheet.create({
     marginRight: CARD_MARGIN,
     justifyContent: "center",
     alignItems: "center",
+    transform: [
+      {
+        scale: 0.905,
+      },
+    ],
   },
 
   nextPrayerCard: {
     backgroundColor: PRIMARY,
     transform: [
       {
-        scale: 1.05,
+        scale: 0.905,
       },
     ],
     shadowColor: PRIMARY,

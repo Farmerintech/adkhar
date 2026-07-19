@@ -7,32 +7,25 @@
     "icon": "./assets/icon.png",
     "scheme": "adhkar",
     "userInterfaceStyle": "automatic",
-
     "ios": {
       "bundleIdentifier": "com.dutycalc.adhkar",
       "supportsTablet": true
     },
-
     "android": {
       "package": "com.dutycalc.adhkar",
       "predictiveBackGestureEnabled": false,
-
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#4A154B"
       },
-
       "permissions": ["NOTIFICATIONS"]
     },
-
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-
     "plugins": [
       "expo-router",
-
       [
         "expo-splash-screen",
         {
@@ -41,36 +34,33 @@
           "imageWidth": 76
         }
       ],
-
       [
         "expo-notifications",
         {
           "sounds": [
-            "./assets/audio/adhan1.mp3",
-            "./assets/audio/adhan2.mp3",
-            "./assets/audio/adhan3.mp3"
+            "./assets/audio/adhan11.wav",
+            "./assets/audio/adhan22.wav",
+            "./assets/audio/adhan33.wav"
           ]
         }
       ],
-
       "expo-secure-store",
       "expo-image",
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-audio",
+      "expo-asset"
     ],
-
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
-
     "extra": {
       "router": {},
       "eas": {
         "projectId": "9a1e4a11-6e0e-4af0-8cc0-cc006829ab31"
       }
     },
-
     "owner": "farmerintech"
   }
 }

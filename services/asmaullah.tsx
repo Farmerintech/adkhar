@@ -83,7 +83,7 @@ export default function AsmaulHusnaSection() {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        snapToInterval={WIDTH - 48}
+        snapToInterval={WIDTH - 65}
         decelerationRate="fast"
         keyExtractor={(item) => item.number.toString()}
         renderItem={renderItem}
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    width: WIDTH - 48,
+    width: WIDTH - 80,
     backgroundColor: PAPER,
     borderRadius: 30,
     padding: 24,
