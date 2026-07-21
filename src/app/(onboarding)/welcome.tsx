@@ -2,13 +2,19 @@ import { default as masjid2 } from "@/assets/masjidl-aqsoh.jpg";
 import { default as masjid1 } from "@/assets/msjd.jpg";
 
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import {
   Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import Animated, { FadeInUp, ZoomIn } from "react-native-reanimated";
@@ -21,13 +27,16 @@ const translation = "What would you like us to call you...?";
 
 export default function OnboardingScreen() {
   const [typedText, setTypedText] = useState("");
+  const [name, setName] = useState({ name: "" });
+
+  const { login } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     let index = 0;
 
     const interval = setInterval(() => {
       setTypedText(translation.slice(0, index + 1));
-
       index++;
 
       if (index === translation.length) {
@@ -37,68 +46,83 @@ export default function OnboardingScreen() {
 
     return () => clearInterval(interval);
   }, []);
-  const [name, setName] = useState<any>({});
-
-  const { login } = useAuth();
 
   const handleChange = (value: string) => {
-    setName({
-      name: value,
-    });
+    setName({ name: value });
   };
-  const router = useRouter();
+
   const handleSubmit = async () => {
+    Keyboard.dismiss();
+
     if (!name.name.trim()) return;
 
     await login(name);
     router.replace("/(tabs)");
   };
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.scroll}>
-        {/* Cluster Section */}
-        <Animated.View
-          entering={ZoomIn.duration(900)}
-          style={styles.clusterContainer}
-        >
-          {/* Back image */}
-          <Image source={masjid1} style={styles.largeRight} />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <StatusBar style="dark" />
 
-          {/* Front image */}
-          <Image source={masjid2} style={styles.smallTop} />
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Cluster Section */}
+            <Animated.View
+              entering={ZoomIn.duration(900)}
+              style={styles.clusterContainer}
+            >
+              {/* Back image */}
+              <Image source={masjid1} style={styles.largeRight} />
 
-          {/* Floating Chips */}
-          <View style={styles.topChip}>
-            <Text style={styles.chipText}>☀ Morning Adhkar</Text>
-          </View>
+              {/* Front image */}
+              <Image source={masjid2} style={styles.smallTop} />
 
-          <View style={styles.bottomChip}>
-            <Text style={styles.chipText}>🌙 Evening Adhkar</Text>
-          </View>
-        </Animated.View>
+              {/* Floating Chips */}
+              <View style={styles.topChip}>
+                <Text style={styles.chipText}>☀ Morning Adhkar</Text>
+              </View>
 
-        {/* Name Input */}
-        <View style={styles.translationContainer}>
-          <TextInput
-            placeholder={typedText}
-            placeholderTextColor="#9A7B9B"
-            style={styles.input}
-            value={name?.name}
-            onChangeText={handleChange}
-          />
-        </View>
+              <View style={styles.bottomChip}>
+                <Text style={styles.chipText}>🌙 Evening Adhkar</Text>
+              </View>
+            </Animated.View>
 
-        {/* Continue Button */}
+            {/* Name Input */}
+            <View style={styles.translationContainer}>
+              <TextInput
+                placeholder={typedText}
+                placeholderTextColor="#9A7B9B"
+                style={styles.input}
+                value={name.name}
+                onChangeText={handleChange}
+                autoCorrect={false}
+                autoCapitalize="words"
+                returnKeyType="done"
+                onSubmitEditing={handleSubmit}
+              />
+            </View>
 
-        <Animated.View
-          entering={FadeInUp.delay(700).duration(800)}
-          style={styles.buttonContainer}
-        >
-          <Pressable style={styles.button} onPress={handleSubmit}>
-            <Text style={styles.buttonText}>Continue</Text>
-          </Pressable>
-        </Animated.View>
-      </View>
+            {/* Continue Button */}
+            <Animated.View
+              entering={FadeInUp.delay(700).duration(800)}
+              style={styles.buttonContainer}
+            >
+              <Pressable style={styles.button} onPress={handleSubmit}>
+                <Text style={styles.buttonText}>Continue</Text>
+              </Pressable>
+            </Animated.View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -107,14 +131,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FCECF5",
-    paddingTop: 30,
   },
 
   scroll: {
+    flexGrow: 1,
     alignItems: "center",
-    paddingTop: 30,
-    paddingBottom: 40,
+    justifyContent: "center",
     paddingHorizontal: 24,
+    paddingVertical: 30,
   },
 
   clusterContainer: {
@@ -181,6 +205,7 @@ const styles = StyleSheet.create({
     color: PRIMARY,
     fontWeight: "600",
     fontSize: 12,
+    fontFamily: "NotoSansArabic",
   },
 
   translationContainer: {

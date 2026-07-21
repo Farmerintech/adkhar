@@ -1,1 +1,0 @@
-using our existing Ui color and way design a setting app for our adkhar by default all entry is checked (like radio box) true it include: allow app to send morning and evening adkhar notification, allow app to make call true prayer, allow app to send tahajjud reminder, allow it should equally allow user to choose between 3 different adhan voice

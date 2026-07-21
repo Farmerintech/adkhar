@@ -229,15 +229,17 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 30,
     fontWeight: "700",
+    fontFamily: "NotoSansArabic",
     marginBottom: 24,
   },
 
   arabic: {
     color: PRIMARY,
     fontSize: 32,
-    lineHeight: 60,
+    lineHeight: 80,
     textAlign: "right",
-    fontWeight: "800",
+    // fontWeight: "800",
+    fontFamily: "AmiriQuran",
   },
 
   transliteration: {
@@ -247,6 +249,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontStyle: "italic",
     color: "#374151",
+    fontFamily: "NotoSansArabic",
   },
 
   translation: {
@@ -255,6 +258,7 @@ const styles = StyleSheet.create({
     lineHeight: 32,
     textAlign: "center",
     color: "#111827",
+    fontFamily: "NotoSansArabic",
   },
 
   tasbihContainer: {
@@ -270,9 +274,9 @@ const styles = StyleSheet.create({
   },
 
   tasbihButton: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: PRIMARY,
     justifyContent: "center",
     alignItems: "center",

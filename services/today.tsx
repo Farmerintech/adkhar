@@ -10,7 +10,7 @@ type Props = {
 
 export default function TodayDateCard({ handleVisible }: Props) {
   const gregorian = moment().format("dddd, D MMMM YYYY");
-  const hijri = moment().format("iD iMMMM iYYYY AH");
+  const hijri = moment().format("iD iMMMM iYYYY [AH]");
 
   return (
     <View style={styles.container}>

@@ -211,6 +211,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "800",
     color: "#111827",
+    fontFamily: " NotoSansArabic",
   },
 
   translation: {
@@ -232,14 +233,16 @@ const styles = StyleSheet.create({
   },
 
   rightSection: {
-    alignItems: "flex-end",
+    alignItems: "center",
     justifyContent: "space-between",
     height: 55,
+    flexDirection: "row",
   },
 
   arabicName: {
     fontSize: 24,
     color: PRIMARY,
-    fontWeight: "700",
+    // fontWeight: "700",
+    fontFamily: "AmiriQuran",
   },
 });

@@ -33,22 +33,20 @@ type PrayerRow = {
   isha: string;
 };
 
+type UserLocation = {
+  latitude: number;
+  longitude: number;
+};
+
 export default function PrayerCalendarModal({ visible, onClose }: Props) {
   const today = new Date();
 
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());
-
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
-
-  const [loading, setLoading] = useState(true);
-
+  const [loading, setLoading] = useState(false);
   const [data, setData] = useState<PrayerRow[]>([]);
-
-  useEffect(() => {
-    if (visible) {
-      generatePrayerTimes();
-    }
-  }, [selectedMonth, selectedYear, visible]);
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [locationName, setLocationName] = useState("");
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], {
@@ -56,6 +54,134 @@ export default function PrayerCalendarModal({ visible, onClose }: Props) {
       minute: "2-digit",
     });
   };
+
+  const updateLocationName = async (location: UserLocation) => {
+    try {
+      const places = await Location.reverseGeocodeAsync(location);
+      const place = places[0];
+
+      const name =
+        place?.city ||
+        place?.subregion ||
+        place?.region ||
+        place?.country ||
+        "";
+
+      setLocationName(name);
+    } catch (error) {
+      console.log("Location Name Error:", error);
+      setLocationName("");
+    }
+  };
+
+  const generatePrayerTimes = (location: UserLocation) => {
+    try {
+      setLoading(true);
+
+      const coordinates = new Coordinates(
+        location.latitude,
+        location.longitude,
+      );
+
+      const params = CalculationMethod.MuslimWorldLeague();
+      params.madhab = Madhab.Shafi;
+
+      const daysInMonth = new Date(
+        selectedYear,
+        selectedMonth + 1,
+        0,
+      ).getDate();
+
+      const prayerRows: PrayerRow[] = [];
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(selectedYear, selectedMonth, day);
+        const prayers = new PrayerTimes(coordinates, date, params);
+
+        prayerRows.push({
+          date: date.toISOString(),
+          day,
+          fajr: formatTime(prayers.fajr),
+          sunrise: formatTime(prayers.sunrise),
+          dhuhr: formatTime(prayers.dhuhr),
+          asr: formatTime(prayers.asr),
+          maghrib: formatTime(prayers.maghrib),
+          isha: formatTime(prayers.isha),
+        });
+      }
+
+      setData(prayerRows);
+    } catch (error) {
+      console.log("Prayer Calendar Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!visible) return;
+
+    let subscription: Location.LocationSubscription | null = null;
+    let isActive = true;
+
+    const startLocationWatcher = async () => {
+      try {
+        setLoading(true);
+
+        const { status } = await Location.requestForegroundPermissionsAsync();
+
+        if (status !== "granted") {
+          setLoading(false);
+          return;
+        }
+
+        const currentLocation = await Location.getCurrentPositionAsync({});
+
+        const currentUserLocation = {
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+        };
+
+        if (!isActive) return;
+
+        setUserLocation(currentUserLocation);
+        await updateLocationName(currentUserLocation);
+
+        subscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.Balanced,
+            distanceInterval: 1000,
+            timeInterval: 60000,
+          },
+          async (newLocation) => {
+            const nextUserLocation = {
+              latitude: newLocation.coords.latitude,
+              longitude: newLocation.coords.longitude,
+            };
+
+            setUserLocation(nextUserLocation);
+            await updateLocationName(nextUserLocation);
+          },
+        );
+      } catch (error) {
+        console.log("Location Watch Error:", error);
+        setLoading(false);
+      }
+    };
+
+    startLocationWatcher();
+
+    return () => {
+      isActive = false;
+      subscription?.remove();
+    };
+  }, [visible]);
+
+  useEffect(() => {
+    if (visible && userLocation) {
+      generatePrayerTimes(userLocation);
+    }
+  }, [selectedMonth, selectedYear, visible, userLocation]);
 
   const previousMonth = () => {
     if (selectedYear === today.getFullYear() - 10 && selectedMonth === 0)
@@ -81,61 +207,6 @@ export default function PrayerCalendarModal({ visible, onClose }: Props) {
     }
   };
 
-  const generatePrayerTimes = async () => {
-    try {
-      setLoading(true);
-
-      const { status } = await Location.requestForegroundPermissionsAsync();
-
-      if (status !== "granted") {
-        setLoading(false);
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({});
-
-      const coordinates = new Coordinates(
-        location.coords.latitude,
-        location.coords.longitude,
-      );
-
-      const params = CalculationMethod.MuslimWorldLeague();
-
-      params.madhab = Madhab.Shafi;
-
-      const daysInMonth = new Date(
-        selectedYear,
-        selectedMonth + 1,
-        0,
-      ).getDate();
-
-      const prayerRows: PrayerRow[] = [];
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(selectedYear, selectedMonth, day);
-
-        const prayers = new PrayerTimes(coordinates, date, params);
-
-        prayerRows.push({
-          date: date.toISOString(),
-          day,
-          fajr: formatTime(prayers.fajr),
-          sunrise: formatTime(prayers.sunrise),
-          dhuhr: formatTime(prayers.dhuhr),
-          asr: formatTime(prayers.asr),
-          maghrib: formatTime(prayers.maghrib),
-          isha: formatTime(prayers.isha),
-        });
-      }
-
-      setData(prayerRows);
-    } catch (e) {
-      console.log(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const monthName = new Date(selectedYear, selectedMonth).toLocaleString(
     "default",
     {
@@ -147,19 +218,18 @@ export default function PrayerCalendarModal({ visible, onClose }: Props) {
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.overlay}>
         <View style={styles.modal}>
-          {/* Handle */}
           <View style={styles.handle} />
 
-          {/* Header */}
           <View style={styles.topHeader}>
-            <Text style={styles.title}>Prayer Timetable</Text>
+            <Text style={styles.title} numberOfLines={1}>
+              {locationName} Prayer Timetable
+            </Text>
 
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={28} color={PRIMARY} />
             </TouchableOpacity>
           </View>
 
-          {/* Month Navigation */}
           <View style={styles.navigation}>
             <TouchableOpacity style={styles.arrow} onPress={previousMonth}>
               <Ionicons name="chevron-back" size={24} color={PRIMARY} />
@@ -167,7 +237,6 @@ export default function PrayerCalendarModal({ visible, onClose }: Props) {
 
             <View style={{ alignItems: "center" }}>
               <Text style={styles.month}>{monthName}</Text>
-
               <Text style={styles.year}>{selectedYear}</Text>
             </View>
 
@@ -183,7 +252,6 @@ export default function PrayerCalendarModal({ visible, onClose }: Props) {
           ) : (
             <ScrollView horizontal>
               <View>
-                {/* Header */}
                 <View style={styles.header}>
                   <Text style={styles.headerText}>Day</Text>
                   <Text style={styles.headerText}>Fajr</Text>
@@ -211,15 +279,10 @@ export default function PrayerCalendarModal({ visible, onClose }: Props) {
                         </Text>
 
                         <Text style={styles.time}>{item.fajr}</Text>
-
                         <Text style={styles.time}>{item.sunrise}</Text>
-
                         <Text style={styles.time}>{item.dhuhr}</Text>
-
                         <Text style={styles.time}>{item.asr}</Text>
-
                         <Text style={styles.time}>{item.maghrib}</Text>
-
                         <Text style={styles.time}>{item.isha}</Text>
                       </View>
                     );

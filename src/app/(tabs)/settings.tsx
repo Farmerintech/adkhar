@@ -149,7 +149,9 @@ export default function SettingsScreen() {
           </Pressable>
 
           <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>{user?.name}</Text>
+            <Text style={styles.headerTitle}>
+              {user?.name}, Asalamu Alaikum
+            </Text>
             <Text style={styles.headerSubtitle}>
               Personalize your Adkhar experience
             </Text>

@@ -256,6 +256,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     writingDirection: "rtl",
     color: "#111827",
+    fontFamily: "AmiriQuran",
   },
 
   translation: {
@@ -264,6 +265,7 @@ const styles = StyleSheet.create({
     color: "#4B5563",
     textAlign: "center",
     fontStyle: "italic",
+    fontFamily: " NotoSansArabic",
   },
 
   reference: {

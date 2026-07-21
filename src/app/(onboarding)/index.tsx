@@ -14,11 +14,12 @@ import Animated, {
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import masjid2 from "@/assets/masjid2.png";
-import masjid3 from "@/assets/masjid3.png";
-import masjid4 from "@/assets/masjid4.png";
+import masjid4 from "@/assets/ilorinmosque.jpg";
+import masjid3 from "@/assets/masjid-nabawy.jpg";
+import masjid2 from "@/assets/masjid-sherif.jpg";
 import { default as masjid } from "@/assets/masjidl-aqsoh.jpg";
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 
 const PRIMARY = "#4A154B";
 
@@ -47,6 +48,8 @@ export default function OnboardingScreen() {
   const router = useRouter();
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar style="dark" />
+
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -249,6 +252,7 @@ const styles = StyleSheet.create({
     lineHeight: 56,
     marginBottom: 5,
     marginTop: -10,
+    fontFamily: "AmiriQuran",
   },
 
   translationContainer: {
@@ -263,6 +267,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 30,
     paddingHorizontal: 10,
+    fontFamily: "NotoSansArabic",
   },
 
   cursor: {

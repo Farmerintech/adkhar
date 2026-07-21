@@ -175,6 +175,7 @@ const styles = StyleSheet.create({
     color: PRIMARY,
     marginTop: 25,
     writingDirection: "rtl",
+    fontFamily: "AmiriQuran",
   },
 
   transliteration: {
@@ -183,6 +184,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: GOLD,
     fontWeight: "700",
+    fontFamily: " NotoSansArabic",
   },
 
   english: {
@@ -191,6 +193,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: "#111827",
     fontWeight: "700",
+    fontFamily: " NotoSansArabic",
   },
 
   meaning: {

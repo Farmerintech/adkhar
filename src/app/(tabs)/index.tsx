@@ -1,7 +1,8 @@
 import { AdkharCard } from "@/components/adkharCards";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
+  BackHandler,
   Modal,
   Pressable,
   ScrollView,
@@ -20,6 +21,7 @@ import AsmaulHusnaSection from "../../../services/asmaullah";
 import PremiumIslamicCalendar from "../../../services/monthly-calender";
 import PrayerCalendarModal from "../../../services/prayerTime";
 // import PrayerTimesToday from "../../../services/prayerTimeToday";
+import { useFocusEffect } from "expo-router";
 import PrayerTimesToday from "../../../services/prayerTimeToday";
 import TodayDateCard from "../../../services/today";
 import VerseOfTheDay from "../../../services/verseOfTheDay";
@@ -36,7 +38,21 @@ export default function Index() {
     setCalendarVisible((prev) => !prev);
   };
   const inset = useSafeAreaInsets();
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        BackHandler.exitApp(); // or return false to let Android minimize naturally
+        return true;
+      };
 
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        onBackPress,
+      );
+
+      return () => subscription.remove();
+    }, []),
+  );
   return (
     <SafeAreaView style={styles.container} edges={["left", "right", "top"]}>
       {/* HEADER */}
@@ -49,7 +65,7 @@ export default function Index() {
         <TodayDateCard handleVisible={() => setIsVisible(true)} />
 
         <TouchableOpacity style={styles.profileBtn} onPress={handleVisible}>
-          <Ionicons name="time-outline" size={24} color={PRIMARY} />
+          <Ionicons name="time-outline" size={24} color={"white"} />
         </TouchableOpacity>
       </View>
 
@@ -117,10 +133,10 @@ const styles = StyleSheet.create({
   },
 
   profileBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: GOLD,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "#6e0870",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -128,8 +144,8 @@ const styles = StyleSheet.create({
   main: {
     flex: 1,
     marginTop: -25,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
     backgroundColor: BG,
   },
 

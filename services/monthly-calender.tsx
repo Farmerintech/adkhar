@@ -2,11 +2,11 @@ import { Ionicons } from "@expo/vector-icons";
 import moment from "moment-hijri";
 import { useState } from "react";
 import {
-    Dimensions,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const PRIMARY = "#4A154B";
@@ -203,6 +203,7 @@ const styles = StyleSheet.create({
     height: 54,
     borderRadius: 14,
     justifyContent: "center",
+    gap: 5,
     alignItems: "center",
     backgroundColor: LIGHT_BG,
     marginBottom: 8,
