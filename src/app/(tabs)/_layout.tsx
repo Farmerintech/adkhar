@@ -33,7 +33,7 @@ export default function TabLayout() {
         tabBarInactiveTintColor: "#999",
 
         tabBarStyle: {
-          paddingTop: Platform.OS === "web" ? 12 : 12,
+          paddingTop: Platform.OS === "web" ? 6 : 12,
           borderTopWidth: 1,
           borderTopColor: "#F2F2F2",
           shadowOpacity: 0.08,
