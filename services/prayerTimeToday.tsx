@@ -7,7 +7,7 @@ import * as Notifications from "expo-notifications";
 
 import { useEffect, useRef, useState } from "react";
 
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 
 const PRIMARY = "#4A154B";
 const GOLD = "#D4AF37";
@@ -21,14 +21,25 @@ type Prayer = {
   date: Date;
 };
 
+type UserCoordinates = {
+  latitude: number;
+  longitude: number;
+};
+
 export default function PrayerTimesToday() {
   const scrollRef = useRef<ScrollView>(null);
+  const webNotificationTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const lastWebLocation = useRef<UserCoordinates | null>(null);
 
   const { settings } = useSettings();
 
   const [prayers, setPrayers] = useState<Prayer[]>([]);
   const [nextPrayerIndex, setNextPrayerIndex] = useState(0);
   const [locationName, setLocationName] = useState("");
+
+  const title = locationName
+    ? `${locationName} Prayer Times Today`
+    : "Prayer Times Today";
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], {
@@ -76,6 +87,30 @@ export default function PrayerTimesToday() {
     }, 300);
   };
 
+  const getDistanceInMeters = (
+    first: UserCoordinates,
+    second: UserCoordinates,
+  ) => {
+    const earthRadius = 6371000;
+    const toRadians = (value: number) => (value * Math.PI) / 180;
+
+    const lat1 = toRadians(first.latitude);
+    const lat2 = toRadians(second.latitude);
+    const deltaLat = toRadians(second.latitude - first.latitude);
+    const deltaLon = toRadians(second.longitude - first.longitude);
+
+    const a =
+      Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+      Math.cos(lat1) *
+        Math.cos(lat2) *
+        Math.sin(deltaLon / 2) *
+        Math.sin(deltaLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return earthRadius * c;
+  };
+
   const updateLocationName = async (latitude: number, longitude: number) => {
     try {
       const places = await Location.reverseGeocodeAsync({
@@ -85,19 +120,72 @@ export default function PrayerTimesToday() {
 
       const place = places[0];
 
-      if (!place) return;
-
       const name =
-        place.city || place.subregion || place.region || place.country || "";
+        place?.city ||
+        place?.subregion ||
+        place?.region ||
+        place?.country ||
+        "";
 
       setLocationName(name);
     } catch (error) {
       console.log("Location Name Error:", error);
-      setLocationName("");
+      setLocationName(Platform.OS === "web" ? "Current Location" : "");
     }
   };
 
+  const clearWebNotifications = () => {
+    webNotificationTimers.current.forEach((timer) => clearTimeout(timer));
+    webNotificationTimers.current = [];
+  };
+
+  const requestWebNotificationPermission = async () => {
+    const BrowserNotification = (globalThis as any).Notification;
+
+    if (!BrowserNotification) return false;
+
+    if (BrowserNotification.permission === "granted") return true;
+    if (BrowserNotification.permission === "denied") return false;
+
+    const permission = await BrowserNotification.requestPermission();
+
+    return permission === "granted";
+  };
+
+  const scheduleWebNotification = async ({
+    title,
+    body,
+    date,
+  }: {
+    title: string;
+    body: string;
+    date: Date;
+  }) => {
+    if (date <= new Date()) return;
+
+    const hasPermission = await requestWebNotificationPermission();
+
+    if (!hasPermission) return;
+
+    const BrowserNotification = (globalThis as any).Notification;
+    const delay = date.getTime() - Date.now();
+
+    const timer = setTimeout(() => {
+      new BrowserNotification(title, {
+        body,
+      });
+    }, delay);
+
+    webNotificationTimers.current.push(timer);
+  };
+
   const schedulePrayerNotifications = async (prayer: PrayerTimes) => {
+    if (Platform.OS === "web") {
+      clearWebNotifications();
+    } else {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+    }
+
     if (!settings.prayerNotification) return;
 
     const soundMap = {
@@ -105,8 +193,6 @@ export default function PrayerTimesToday() {
       sudais: "adhan22.wav",
       muaiqly: "adhan33.wav",
     };
-
-    await Notifications.cancelAllScheduledNotificationsAsync();
 
     const notificationPrayers = [
       { name: "Fajr", date: prayer.fajr },
@@ -119,11 +205,24 @@ export default function PrayerTimesToday() {
     for (const item of notificationPrayers) {
       if (item.date <= new Date()) continue;
 
+      const title = `🕌 ${item.name} Prayer`;
+      const body = `It is time for ${item.name} prayer.`;
+
+      if (Platform.OS === "web") {
+        await scheduleWebNotification({
+          title,
+          body,
+          date: item.date,
+        });
+
+        continue;
+      }
+
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: `🕌 ${item.name} Prayer`,
-          body: `It is time for ${item.name} prayer.`,
-          sound: soundMap[settings.adhanVoice] as any,
+          title,
+          body,
+          sound: soundMap[settings.adhanVoice as keyof typeof soundMap] as any,
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -154,21 +253,52 @@ export default function PrayerTimesToday() {
     }
   };
 
-  useEffect(() => {
-    let subscription: Location.LocationSubscription | null = null;
+  const getWebCurrentPosition = () => {
+    return new Promise<UserCoordinates>((resolve, reject) => {
+      const navigatorObject = (globalThis as any).navigator;
 
-    const startLocationWatcher = async () => {
+      if (!navigatorObject?.geolocation) {
+        reject(new Error("Geolocation is not supported in this browser."));
+        return;
+      }
+
+      navigatorObject.geolocation.getCurrentPosition(
+        (position: any) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        reject,
+        {
+          enableHighAccuracy: false,
+          timeout: 15000,
+          maximumAge: 60000,
+        },
+      );
+    });
+  };
+
+  useEffect(() => {
+    let nativeSubscription: Location.LocationSubscription | null = null;
+    let webWatchId: number | null = null;
+    let active = true;
+
+    const startNativeLocationWatcher = async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
 
       if (status !== "granted") return;
 
       const currentLocation = await Location.getCurrentPositionAsync({});
+
+      if (!active) return;
+
       await generatePrayerTimes(
         currentLocation.coords.latitude,
         currentLocation.coords.longitude,
       );
 
-      subscription = await Location.watchPositionAsync(
+      nativeSubscription = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.Balanced,
           distanceInterval: 1000,
@@ -183,17 +313,83 @@ export default function PrayerTimesToday() {
       );
     };
 
-    startLocationWatcher();
+    const startWebLocationWatcher = async () => {
+      try {
+        const currentLocation = await getWebCurrentPosition();
+
+        if (!active) return;
+
+        lastWebLocation.current = currentLocation;
+
+        await generatePrayerTimes(
+          currentLocation.latitude,
+          currentLocation.longitude,
+        );
+
+        const navigatorObject = (globalThis as any).navigator;
+
+        if (!navigatorObject?.geolocation?.watchPosition) return;
+
+        webWatchId = navigatorObject.geolocation.watchPosition(
+          async (position: any) => {
+            const nextLocation = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            };
+
+            const previousLocation = lastWebLocation.current;
+
+            if (
+              previousLocation &&
+              getDistanceInMeters(previousLocation, nextLocation) < 1000
+            ) {
+              return;
+            }
+
+            lastWebLocation.current = nextLocation;
+
+            await generatePrayerTimes(
+              nextLocation.latitude,
+              nextLocation.longitude,
+            );
+          },
+          (error: any) => {
+            console.log("Web Location Watch Error:", error);
+          },
+          {
+            enableHighAccuracy: false,
+            timeout: 15000,
+            maximumAge: 60000,
+          },
+        );
+      } catch (error) {
+        console.log("Web Location Error:", error);
+      }
+    };
+
+    if (Platform.OS === "web") {
+      startWebLocationWatcher();
+    } else {
+      startNativeLocationWatcher();
+    }
 
     return () => {
-      subscription?.remove();
+      active = false;
+
+      nativeSubscription?.remove();
+
+      if (Platform.OS === "web" && webWatchId !== null) {
+        const navigatorObject = (globalThis as any).navigator;
+        navigatorObject?.geolocation?.clearWatch(webWatchId);
+        clearWebNotifications();
+      }
     };
   }, [settings.prayerNotification, settings.adhanVoice]);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>{locationName} Prayer Times Today</Text>
+        <Text style={styles.title}>{title}</Text>
 
         <Text style={styles.subtitle}>Next prayer highlighted</Text>
       </View>

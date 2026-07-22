@@ -18,12 +18,11 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#4A154B"
       },
-      "permissions": [
-        "NOTIFICATIONS"
-      ]
+      "permissions": ["NOTIFICATIONS"]
     },
     "web": {
-      "output": "static",
+      "bundler": "metro",
+      "output": "single",
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
@@ -31,7 +30,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#4A154B"
+          "image": "./assets/splash-screen.png",
+          "backgroundColor": "#4A154B",
+          "imageWidth": 200
         }
       ],
       [

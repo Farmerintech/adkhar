@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import { Pressable } from "react-native";
+import { Platform, Pressable } from "react-native";
 
 const PRIMARY = "#4A154B";
 
@@ -33,7 +33,7 @@ export default function TabLayout() {
         tabBarInactiveTintColor: "#999",
 
         tabBarStyle: {
-          paddingTop: 10,
+          paddingTop: Platform.OS === "web" ? 12 : 12,
           borderTopWidth: 1,
           borderTopColor: "#F2F2F2",
           shadowOpacity: 0.08,

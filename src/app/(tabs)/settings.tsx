@@ -1,15 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
 import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSettings } from "../context/settingsContext";
@@ -21,6 +24,7 @@ const PAPER = "#FFFDF8";
 const LIGHT = "#F8F5FA";
 const BORDER = "#EFE3C8";
 const LIGHT_BG = "#F8F5FA";
+const DANGER = "#DC2626";
 
 export default function SettingsScreen() {
   const {
@@ -31,11 +35,21 @@ export default function SettingsScreen() {
     setAdhanVoice,
   } = useSettings();
 
-  const { user } = useAuth() || { user: { name: "yakub" } };
+  // Extract user and action handlers from auth context
+  const { user, logout, login } = useAuth() || {
+    user: { name: "yakub" },
+    logout: () => {},
+    login: async () => {},
+  };
+
   const router = useRouter();
 
+  // Profile Edit State
+  const [isNameModalVisible, setIsNameModalVisible] = useState(false);
+  const [newName, setNewName] = useState(user?.name || "");
+
   // Audio State Management
-  const [player, setPlayer] = useState<any>(null);
+  const playerRef = useRef<any>(null);
   const [playingVoiceKey, setPlayingVoiceKey] = useState<string | null>(null);
   const [loadingVoiceKey, setLoadingVoiceKey] = useState<string | null>(null);
 
@@ -45,7 +59,6 @@ export default function SettingsScreen() {
         key: "alafasy",
         title: "Mishary Rashid Alafasy",
         subtitle: "Calm and beautiful recitation",
-        // Replace with your real audio file paths or remote URLs
         uri: require("@/assets/audio/adhan1.mp3"),
       },
       {
@@ -64,26 +77,29 @@ export default function SettingsScreen() {
     [],
   );
 
-  // Clean up sound on unmount
+  // Clean up sound on component unmount
   useEffect(() => {
     return () => {
-      if (player) {
-        player.release();
+      if (playerRef.current) {
+        playerRef.current.pause();
+        if (typeof playerRef.current.remove === "function") {
+          playerRef.current.remove();
+        }
+        playerRef.current = null;
       }
     };
-  }, [player]);
+  }, []);
 
   const playAdhanSample = async (voiceKey: string, source: any) => {
     try {
-      if (player) {
-        player.pause();
-        player.release();
-        setPlayer(null);
+      if (playingVoiceKey === voiceKey && playerRef.current) {
+        playerRef.current.pause();
+        setPlayingVoiceKey(null);
+        return;
+      }
 
-        if (playingVoiceKey === voiceKey) {
-          setPlayingVoiceKey(null);
-          return;
-        }
+      if (playerRef.current) {
+        playerRef.current.pause();
       }
 
       setLoadingVoiceKey(voiceKey);
@@ -94,16 +110,50 @@ export default function SettingsScreen() {
       });
 
       const newPlayer = createAudioPlayer(source);
+      playerRef.current = newPlayer;
 
-      setPlayer(newPlayer);
+      newPlayer.addListener("playbackStatusUpdate", (status: any) => {
+        if (status.didJustFinish) {
+          setPlayingVoiceKey(null);
+        }
+      });
+
       setPlayingVoiceKey(voiceKey);
       setLoadingVoiceKey(null);
-
       newPlayer.play();
     } catch (error) {
-      console.log("Error playing preview audio", error);
+      console.log("Error playing preview audio:", error);
       setLoadingVoiceKey(null);
+      setPlayingVoiceKey(null);
     }
+  };
+
+  const handleSaveName = async () => {
+    if (!newName.trim()) return;
+    try {
+      if (login) {
+        await login({ name: newName });
+      }
+      setIsNameModalVisible(false);
+    } catch (error) {
+      Alert.alert("Error", "Could not update name. Please try again.");
+    }
+  };
+
+  const handleLogout = () => {
+    Alert.alert("Log Out", "Are you sure you want to log out of Adkhar?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Log Out",
+        style: "destructive",
+        onPress: async () => {
+          if (logout) {
+            await logout();
+            router.replace("/(onboarding)");
+          }
+        },
+      },
+    ]);
   };
 
   const SettingRow = ({ icon, title, subtitle, value, onPress }: any) => (
@@ -116,13 +166,11 @@ export default function SettingsScreen() {
         <View style={styles.iconContainer}>
           <Ionicons name={icon} size={22} color={PRIMARY} />
         </View>
-
         <View style={{ flex: 1 }}>
           <Text style={styles.settingTitle}>{title}</Text>
           <Text style={styles.settingSubtitle}>{subtitle}</Text>
         </View>
       </View>
-
       <View style={[styles.switchContainer, value && styles.switchActive]}>
         <View style={[styles.switchKnob, value && styles.switchKnobActive]} />
         {value && (
@@ -147,7 +195,6 @@ export default function SettingsScreen() {
           <Pressable style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={22} color="white" />
           </Pressable>
-
           <View style={{ flex: 1 }}>
             <Text style={styles.headerTitle}>
               {user?.name}, Asalamu Alaikum
@@ -160,9 +207,32 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* ACCOUNT SETTINGS */}
+        <Text style={styles.sectionTitle}>Account</Text>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={styles.actionCard}
+          onPress={() => {
+            setNewName(user?.name || "");
+            setIsNameModalVisible(true);
+          }}
+        >
+          <View style={styles.settingLeft}>
+            <View style={styles.iconContainer}>
+              <Ionicons name="person-outline" size={22} color={PRIMARY} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.settingTitle}>Change Name</Text>
+              <Text style={styles.settingSubtitle}>
+                {user?.name || "Set your display name"}
+              </Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+        </TouchableOpacity>
+
         {/* NOTIFICATIONS */}
         <Text style={styles.sectionTitle}>Notifications</Text>
-
         <SettingRow
           icon="sunny-outline"
           title="Morning & Evening Adhkar"
@@ -170,7 +240,6 @@ export default function SettingsScreen() {
           value={settings.morningEveningNotification}
           onPress={toggleMorningEvening}
         />
-
         <SettingRow
           icon="notifications-outline"
           title="Prayer Time Notifications"
@@ -178,7 +247,6 @@ export default function SettingsScreen() {
           value={settings.prayerNotification}
           onPress={togglePrayerNotification}
         />
-
         <SettingRow
           icon="moon-outline"
           title="Tahajjud Reminder"
@@ -189,12 +257,10 @@ export default function SettingsScreen() {
 
         {/* ADHAN VOICES */}
         <Text style={styles.sectionTitle}>Adhan Voice</Text>
-
-        {voices.map((voice: any) => {
+        {voices.map((voice) => {
           const selected = settings.adhanVoice === voice.key;
           const isPlaying = playingVoiceKey === voice.key;
           const isLoading = loadingVoiceKey === voice.key;
-
           return (
             <TouchableOpacity
               key={voice.key}
@@ -202,7 +268,6 @@ export default function SettingsScreen() {
               style={[styles.voiceCard, selected && styles.voiceSelected]}
               onPress={() => setAdhanVoice(voice.key as any)}
             >
-              {/* Play / Pause Auditory Sample Action Button */}
               <TouchableOpacity
                 style={styles.playButton}
                 onPress={() => playAdhanSample(voice.key, voice.uri)}
@@ -217,7 +282,6 @@ export default function SettingsScreen() {
                   />
                 )}
               </TouchableOpacity>
-
               <View style={{ flex: 1, marginLeft: 10 }}>
                 <Text
                   style={[
@@ -229,7 +293,6 @@ export default function SettingsScreen() {
                 </Text>
                 <Text style={styles.voiceSubtitle}>{voice.subtitle}</Text>
               </View>
-
               <View
                 style={[
                   styles.radioOuter,
@@ -254,8 +317,54 @@ export default function SettingsScreen() {
           </Text>
         </View>
 
+        {/* LOGOUT BUTTON */}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={styles.logoutButton}
+          onPress={handleLogout}
+        >
+          <Ionicons name="log-out-outline" size={22} color={DANGER} />
+          <Text style={styles.logoutText}>Log Out</Text>
+        </TouchableOpacity>
+
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* CHANGE NAME MODAL */}
+      <Modal
+        visible={isNameModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsNameModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Update Name</Text>
+            <TextInput
+              style={styles.input}
+              value={newName}
+              onChangeText={setNewName}
+              placeholder="Enter your name"
+              placeholderTextColor="#9CA3AF"
+              autoFocus
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalCancelBtn]}
+                onPress={() => setIsNameModalVisible(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalSaveBtn]}
+                onPress={handleSaveName}
+              >
+                <Text style={styles.modalSaveText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -299,6 +408,17 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     marginBottom: 16,
     marginTop: 10,
+  },
+  actionCard: {
+    backgroundColor: LIGHT,
+    borderRadius: 24,
+    padding: 18,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: BORDER,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   settingCard: {
     backgroundColor: LIGHT,
@@ -435,5 +555,77 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#6B7280",
     lineHeight: 24,
+  },
+  logoutButton: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FEE2E2",
+    borderRadius: 20,
+    padding: 16,
+    marginTop: 24,
+    borderWidth: 1,
+    borderColor: "#FCA5A5",
+  },
+  logoutText: {
+    color: DANGER,
+    fontWeight: "700",
+    fontSize: 16,
+    marginLeft: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  modalContent: {
+    width: "100%",
+    backgroundColor: PAPER,
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: PRIMARY,
+    marginBottom: 16,
+  },
+  input: {
+    backgroundColor: LIGHT,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: BORDER,
+    fontSize: 16,
+    color: "#111827",
+    marginBottom: 20,
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+  },
+  modalBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+  },
+  modalCancelBtn: {
+    backgroundColor: LIGHT,
+  },
+  modalCancelText: {
+    color: "#6B7280",
+    fontWeight: "600",
+  },
+  modalSaveBtn: {
+    backgroundColor: PRIMARY,
+  },
+  modalSaveText: {
+    color: "white",
+    fontWeight: "700",
   },
 });

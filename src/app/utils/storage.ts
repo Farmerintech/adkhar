@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 
 /* =========================
    TYPES
@@ -41,12 +42,42 @@ export const DEFAULT_SETTINGS: AppSettings = {
 };
 
 /* =========================
+   LOW LEVEL STORAGE HELPERS
+========================= */
+
+const storage = {
+  async set(key: string, value: string) {
+    if (Platform.OS === "web") {
+      localStorage.setItem(key, value);
+    } else {
+      await SecureStore.setItemAsync(key, value);
+    }
+  },
+
+  async get(key: string): Promise<string | null> {
+    if (Platform.OS === "web") {
+      return localStorage.getItem(key);
+    }
+
+    return await SecureStore.getItemAsync(key);
+  },
+
+  async remove(key: string) {
+    if (Platform.OS === "web") {
+      localStorage.removeItem(key);
+    } else {
+      await SecureStore.deleteItemAsync(key);
+    }
+  },
+};
+
+/* =========================
    GENERIC HELPERS
 ========================= */
 
 const setItem = async (key: string, value: any) => {
   try {
-    await SecureStore.setItemAsync(key, JSON.stringify(value));
+    await storage.set(key, JSON.stringify(value));
   } catch (error) {
     console.error("Storage set error:", error);
   }
@@ -54,8 +85,11 @@ const setItem = async (key: string, value: any) => {
 
 const getItem = async <T>(key: string): Promise<T | null> => {
   try {
-    const value = await SecureStore.getItemAsync(key);
-    return value ? (JSON.parse(value) as T) : null;
+    const value = await storage.get(key);
+
+    if (!value) return null;
+
+    return JSON.parse(value) as T;
   } catch (error) {
     console.error("Storage get error:", error);
     return null;
@@ -64,7 +98,7 @@ const getItem = async <T>(key: string): Promise<T | null> => {
 
 const removeItem = async (key: string) => {
   try {
-    await SecureStore.deleteItemAsync(key);
+    await storage.remove(key);
   } catch (error) {
     console.error("Storage remove error:", error);
   }
@@ -91,21 +125,12 @@ export const removeUser = async () => {
 ========================= */
 
 export const setOnboardingSeen = async () => {
-  try {
-    await SecureStore.setItemAsync(KEYS.ONBOARDING, "true");
-  } catch (error) {
-    console.error("Onboarding set error:", error);
-  }
+  await setItem(KEYS.ONBOARDING, true);
 };
 
 export const hasSeenOnboarding = async (): Promise<boolean> => {
-  try {
-    const value = await SecureStore.getItemAsync(KEYS.ONBOARDING);
-    return value === "true";
-  } catch (error) {
-    console.error("Onboarding get error:", error);
-    return false;
-  }
+  const seen = await getItem<boolean>(KEYS.ONBOARDING);
+  return seen ?? false;
 };
 
 /* =========================
@@ -125,7 +150,6 @@ export const getSettings = async (): Promise<AppSettings> => {
       return DEFAULT_SETTINGS;
     }
 
-    // Merge with defaults so new fields are added automatically
     return {
       ...DEFAULT_SETTINGS,
       ...settings,
@@ -141,14 +165,14 @@ export const resetSettings = async () => {
 };
 
 /* =========================
-   OPTIONAL FULL RESET
+   CLEAR EVERYTHING
 ========================= */
 
 export const clearAllStorage = async () => {
   try {
-    await SecureStore.deleteItemAsync(KEYS.USER);
-    await SecureStore.deleteItemAsync(KEYS.ONBOARDING);
-    await SecureStore.deleteItemAsync(KEYS.SETTINGS);
+    await removeItem(KEYS.USER);
+    await removeItem(KEYS.ONBOARDING);
+    await removeItem(KEYS.SETTINGS);
   } catch (error) {
     console.error("Clear storage error:", error);
   }

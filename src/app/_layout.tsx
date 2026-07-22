@@ -6,6 +6,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import {
   ImageBackground,
+  Platform,
   StyleSheet,
   Text,
   useColorScheme,
@@ -65,7 +66,11 @@ function LoadingScreen() {
 function RootNavigator() {
   const colorScheme = useColorScheme();
   const { loading } = useAuth();
-
+  useEffect(() => {
+    if (Platform.OS === "web" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js");
+    }
+  }, []);
   const [fontsLoaded] = useFonts({
     NotoSansArabic: require("../../assets/fonts/NotoSansArabic.ttf"),
     AmiriQuran: require("../../assets/fonts/AmiriQuran-Regular.ttf"),
@@ -112,8 +117,7 @@ function RootNavigator() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="(screens)" />
           </Stack>
-
-          <AdhkarReminder />
+          {Platform.OS !== "web" && <AdhkarReminder />}
         </SettingsProvider>
       </NotificationProvider>
     </ThemeProvider>

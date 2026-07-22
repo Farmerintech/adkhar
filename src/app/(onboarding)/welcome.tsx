@@ -22,7 +22,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../context/userContext";
 
 const PRIMARY = "#4A154B";
-
 const translation = "What would you like us to call you...?";
 
 export default function OnboardingScreen() {
@@ -60,6 +59,62 @@ export default function OnboardingScreen() {
     router.replace("/(tabs)");
   };
 
+  // Content render to prevent duplicating code
+  const renderContent = () => (
+    <ScrollView
+      contentContainerStyle={styles.scroll}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Cluster Section */}
+      <Animated.View
+        entering={ZoomIn.duration(900)}
+        style={styles.clusterContainer}
+      >
+        {/* Back image */}
+        <Image source={masjid1} style={styles.largeRight} />
+
+        {/* Front image */}
+        <Image source={masjid2} style={styles.smallTop} />
+
+        {/* Floating Chips */}
+        <View style={styles.topChip}>
+          <Text style={styles.chipText}>☀ Morning Adhkar</Text>
+        </View>
+
+        <View style={styles.bottomChip}>
+          <Text style={styles.chipText}>🌙 Evening Adhkar</Text>
+        </View>
+      </Animated.View>
+
+      {/* Name Input */}
+      <View style={styles.translationContainer}>
+        <TextInput
+          placeholder={typedText}
+          placeholderTextColor="#9A7B9B"
+          style={styles.input}
+          value={name.name}
+          onChangeText={handleChange}
+          autoCorrect={false}
+          autoCapitalize="words"
+          returnKeyType="done"
+          onSubmitEditing={handleSubmit}
+        />
+      </View>
+
+      {/* Continue Button */}
+      <Animated.View
+        entering={FadeInUp.delay(700).duration(800)}
+        style={styles.buttonContainer}
+      >
+        <Pressable style={styles.button} onPress={handleSubmit}>
+          <Text style={styles.buttonText}>Continue</Text>
+        </Pressable>
+      </Animated.View>
+    </ScrollView>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -68,60 +123,14 @@ export default function OnboardingScreen() {
       >
         <StatusBar style="dark" />
 
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView
-            contentContainerStyle={styles.scroll}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Cluster Section */}
-            <Animated.View
-              entering={ZoomIn.duration(900)}
-              style={styles.clusterContainer}
-            >
-              {/* Back image */}
-              <Image source={masjid1} style={styles.largeRight} />
-
-              {/* Front image */}
-              <Image source={masjid2} style={styles.smallTop} />
-
-              {/* Floating Chips */}
-              <View style={styles.topChip}>
-                <Text style={styles.chipText}>☀ Morning Adhkar</Text>
-              </View>
-
-              <View style={styles.bottomChip}>
-                <Text style={styles.chipText}>🌙 Evening Adhkar</Text>
-              </View>
-            </Animated.View>
-
-            {/* Name Input */}
-            <View style={styles.translationContainer}>
-              <TextInput
-                placeholder={typedText}
-                placeholderTextColor="#9A7B9B"
-                style={styles.input}
-                value={name.name}
-                onChangeText={handleChange}
-                autoCorrect={false}
-                autoCapitalize="words"
-                returnKeyType="done"
-                onSubmitEditing={handleSubmit}
-              />
-            </View>
-
-            {/* Continue Button */}
-            <Animated.View
-              entering={FadeInUp.delay(700).duration(800)}
-              style={styles.buttonContainer}
-            >
-              <Pressable style={styles.button} onPress={handleSubmit}>
-                <Text style={styles.buttonText}>Continue</Text>
-              </Pressable>
-            </Animated.View>
-          </ScrollView>
-        </TouchableWithoutFeedback>
+        {/* Avoid wrapping with TouchableWithoutFeedback on Web */}
+        {Platform.OS === "web" ? (
+          renderContent()
+        ) : (
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            {renderContent()}
+          </TouchableWithoutFeedback>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -132,7 +141,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FCECF5",
   },
-
   scroll: {
     flexGrow: 1,
     alignItems: "center",
@@ -140,14 +148,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 30,
   },
-
   clusterContainer: {
     width: 320,
     height: 380,
     position: "relative",
     marginBottom: 30,
   },
-
   largeRight: {
     width: "100%",
     height: 370,
@@ -157,7 +163,6 @@ const styles = StyleSheet.create({
     zIndex: 1,
     transform: [{ rotate: "5deg" }],
   },
-
   smallTop: {
     position: "absolute",
     width: "100%",
@@ -170,7 +175,6 @@ const styles = StyleSheet.create({
     zIndex: 5,
     transform: [{ rotate: "-4deg" }],
   },
-
   topChip: {
     position: "absolute",
     right: -10,
@@ -185,7 +189,6 @@ const styles = StyleSheet.create({
     elevation: 4,
     zIndex: 10,
   },
-
   bottomChip: {
     position: "absolute",
     left: 20,
@@ -200,20 +203,17 @@ const styles = StyleSheet.create({
     elevation: 4,
     zIndex: 10,
   },
-
   chipText: {
     color: PRIMARY,
     fontWeight: "600",
     fontSize: 12,
     fontFamily: "NotoSansArabic",
   },
-
   translationContainer: {
     width: "100%",
     marginTop: 20,
     marginBottom: 30,
   },
-
   input: {
     width: "100%",
     paddingHorizontal: 24,
@@ -225,18 +225,15 @@ const styles = StyleSheet.create({
     color: PRIMARY,
     backgroundColor: "#fff",
   },
-
   buttonContainer: {
     width: "100%",
   },
-
   button: {
     backgroundColor: PRIMARY,
     paddingVertical: 18,
     borderRadius: 999,
     alignItems: "center",
   },
-
   buttonText: {
     color: "#fff",
     fontWeight: "600",
