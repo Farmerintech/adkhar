@@ -3,14 +3,15 @@ import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Dimensions,
-    ScrollView,
-    Share,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  Platform,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const PRIMARY = "#4A154B";
@@ -18,6 +19,33 @@ const GOLD = "#D4AF37";
 const PAPER = "#FFFDF8";
 
 const CARD_WIDTH = Dimensions.get("window").width - 76;
+
+// Cross-Platform Storage Helper (SecureStore on Native, localStorage on Web)
+const storage = {
+  getItem: async (key: string): Promise<string | null> => {
+    if (Platform.OS === "web") {
+      try {
+        return typeof window !== "undefined" ? localStorage.getItem(key) : null;
+      } catch {
+        return null;
+      }
+    }
+    return await SecureStore.getItemAsync(key);
+  },
+  setItem: async (key: string, value: string): Promise<void> => {
+    if (Platform.OS === "web") {
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.setItem(key, value);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+      return;
+    }
+    await SecureStore.setItemAsync(key, value);
+  },
+};
 
 const toArabicNumber = (num?: number | string) => {
   const arabic = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
@@ -58,11 +86,8 @@ export default function VerseOfTheDay() {
 
   const loadVerse = async () => {
     try {
-      const savedVerse = await SecureStore.getItemAsync("daily_quran_verse");
-
-      const savedDate = await SecureStore.getItemAsync(
-        "daily_quran_verse_date",
-      );
+      const savedVerse = await storage.getItem("daily_quran_verse");
+      const savedDate = await storage.getItem("daily_quran_verse_date");
 
       const today = new Date().toISOString().split("T")[0];
 
@@ -73,16 +98,14 @@ export default function VerseOfTheDay() {
 
       const newVerse = getRandomVerse();
 
-      await SecureStore.setItemAsync(
-        "daily_quran_verse",
-        JSON.stringify(newVerse),
-      );
-
-      await SecureStore.setItemAsync("daily_quran_verse_date", today);
+      await storage.setItem("daily_quran_verse", JSON.stringify(newVerse));
+      await storage.setItem("daily_quran_verse_date", today);
 
       setVerse(newVerse);
     } catch (error) {
-      console.log(error);
+      console.log("Error loading verse:", error);
+      // Fallback in case storage fails completely
+      setVerse(getRandomVerse());
     }
   };
 
@@ -107,11 +130,23 @@ Shared from Adkhar 🌙
 `;
 
     try {
-      await Share.share({
-        message: shareText,
-      });
+      if (Platform.OS === "web") {
+        if (navigator.share) {
+          await navigator.share({
+            title: "Verse of the Day",
+            text: shareText,
+          });
+        } else if (navigator.clipboard) {
+          await navigator.clipboard.writeText(shareText);
+          alert("Verse copied to clipboard!");
+        }
+      } else {
+        await Share.share({
+          message: shareText,
+        });
+      }
     } catch (error) {
-      console.log(error);
+      console.log("Error sharing:", error);
     }
   };
 
@@ -131,7 +166,6 @@ Shared from Adkhar 🌙
 
         <View style={styles.dayChip}>
           <Ionicons name="time-outline" size={14} color={GOLD} />
-
           <Text style={styles.dayText}>24 Hours</Text>
         </View>
       </View>
@@ -265,7 +299,7 @@ const styles = StyleSheet.create({
     color: "#4B5563",
     textAlign: "center",
     fontStyle: "italic",
-    fontFamily: " NotoSansArabic",
+    fontFamily: "NotoSansArabic", // Removed leading space
   },
 
   reference: {
