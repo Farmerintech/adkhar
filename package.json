@@ -52,7 +52,7 @@
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "build:web": "expo export --platform web",
+    "build:web": "expo export --platform web && cpy \"public/**/*\" dist",
     "lint": "expo lint"
   },
   "private": true
