@@ -74,7 +74,7 @@ export default function QuranScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             paddingHorizontal: 20,
-            paddingBottom: 40,
+            paddingBottom: 80,
           }}
           renderItem={({ item }) => (
             <TouchableOpacity

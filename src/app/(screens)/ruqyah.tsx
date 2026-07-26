@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const PRIMARY = "#4A154B";
-const BG = "#F8F5FA";
+const LIGHT_BG = "#F8F5FA";
 
 export default function RuqyahCategoryScreen() {
   const router = useRouter();
@@ -25,35 +25,47 @@ export default function RuqyahCategoryScreen() {
     <SafeAreaView style={styles.container} edges={["left", "right", "top"]}>
       <StatusBar barStyle="light-content" />
 
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => router.back()}
+          activeOpacity={0.8}
+        >
           <Ionicons name="chevron-back" size={22} color="white" />
         </TouchableOpacity>
 
-        <View style={{ flex: 1 }}>
+        <View style={styles.headerTextContainer}>
           <Text style={styles.headerTitle}>{title}</Text>
+
           <Text style={styles.headerSubtitle}>{topics.length} articles</Text>
         </View>
       </View>
-      <View style={{ backgroundColor: BG }}>
+
+      {/* Content */}
+      <View style={styles.content}>
         <FlatList
           data={topics}
           keyExtractor={(item) => String(item.sub_id)}
           contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
             <TouchableOpacity
               activeOpacity={0.85}
               style={styles.card}
               onPress={() =>
                 router.push(
-                  `/(screens)/ruqyahTopic?category=${category ?? ""}&subId=${String(item.sub_id)}`,
+                  `/(screens)/ruqyahTopic?category=${
+                    category ?? ""
+                  }&subId=${String(item.sub_id)}`,
                 )
               }
             >
-              <View style={{ flex: 1 }}>
+              <View style={styles.cardContent}>
                 <Text style={styles.cardTitle} numberOfLines={2}>
                   {item.title}
                 </Text>
+
                 <Text style={styles.cardSubtitle} numberOfLines={1}>
                   {item.section_title}
                 </Text>
@@ -69,13 +81,24 @@ export default function RuqyahCategoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: PRIMARY },
+  /**
+   * SafeAreaView uses the same color as the tab bar.
+   */
+  container: {
+    flex: 1,
+    backgroundColor: PRIMARY,
+  },
+
+  /**
+   * Top header also uses the primary/tab bar color.
+   */
   header: {
     backgroundColor: PRIMARY,
     padding: 20,
     flexDirection: "row",
     alignItems: "center",
   },
+
   backBtn: {
     width: 42,
     height: 42,
@@ -85,9 +108,36 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 14,
   },
-  headerTitle: { color: "white", fontSize: 20, fontWeight: "800" },
-  headerSubtitle: { color: "#E5D6E5", marginTop: 4 },
-  list: { padding: 20 },
+
+  headerTextContainer: {
+    flex: 1,
+  },
+
+  headerTitle: {
+    color: "white",
+    fontSize: 20,
+    fontWeight: "800",
+  },
+
+  headerSubtitle: {
+    color: "#E5D6E5",
+    marginTop: 4,
+    fontSize: 13,
+  },
+
+  /**
+   * Main page area uses the light background.
+   */
+  content: {
+    flex: 1,
+    backgroundColor: LIGHT_BG,
+  },
+
+  list: {
+    padding: 20,
+    paddingBottom: 30,
+  },
+
   card: {
     backgroundColor: "white",
     borderRadius: 20,
@@ -98,6 +148,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#EFE3C8",
   },
-  cardTitle: { fontSize: 15, fontWeight: "700", color: "#111827" },
-  cardSubtitle: { marginTop: 4, color: "#6B7280", fontSize: 13 },
+
+  cardContent: {
+    flex: 1,
+    paddingRight: 12,
+  },
+
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#111827",
+  },
+
+  cardSubtitle: {
+    marginTop: 4,
+    color: "#6B7280",
+    fontSize: 13,
+  },
 });

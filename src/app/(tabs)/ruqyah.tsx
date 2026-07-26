@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: { color: "white", fontSize: 22, fontWeight: "800" },
   headerSubtitle: { color: "#E5D6E5", marginTop: 4 },
-  list: { padding: 20 },
+  list: { padding: 20, paddingBottom: 60 },
   card: {
     backgroundColor: "white",
     borderRadius: 20,

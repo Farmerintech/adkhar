@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 20,
     marginTop: 18,
-    paddingBottom: 40,
+    paddingBottom: 80,
   },
 
   card: {

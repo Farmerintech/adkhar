@@ -222,8 +222,24 @@ export default function PrayerTimesToday() {
     params.madhab = Madhab.Shafi;
 
     const voice = settings.adhanVoice as keyof typeof ADHAN_SOUND_MAP;
-    const sound = ADHAN_SOUND_MAP[voice];
-    const channelId = ADHAN_CHANNEL_MAP[voice];
+    const sound = ADHAN_SOUND_MAP[voice] ?? ADHAN_SOUND_MAP.alafasy;
+    const channelId = ADHAN_CHANNEL_MAP[voice] ?? ADHAN_CHANNEL_MAP.alafasy;
+
+    // Guarantee the channel exists before we ever try to schedule against
+    // it — don't rely on NotificationProvider's setup effect having run
+    // first, since effect order between a parent provider and a deeply
+    // nested child is NOT guaranteed on initial mount. This call is cheap
+    // and idempotent; Android just no-ops if the channel already exists
+    // with the same id.
+    if (Platform.OS === "android") {
+      await Notifications.setNotificationChannelAsync(channelId, {
+        name: `Adhan - ${voice}`,
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#4A154B",
+        sound,
+      });
+    }
 
     for (let dayOffset = 0; dayOffset < DAYS_AHEAD; dayOffset++) {
       const targetDate = new Date();
