@@ -18,7 +18,18 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#4A154B"
       },
-      "permissions": ["NOTIFICATIONS"]
+      "permissions": [
+        "NOTIFICATIONS",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "NOTIFICATIONS",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -63,6 +74,12 @@
         "projectId": "9a1e4a11-6e0e-4af0-8cc0-cc006829ab31"
       }
     },
-    "owner": "farmerintech"
+    "owner": "farmerintech",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/9a1e4a11-6e0e-4af0-8cc0-cc006829ab31"
+    }
   }
 }

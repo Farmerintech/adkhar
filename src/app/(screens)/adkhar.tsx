@@ -2,8 +2,12 @@ import * as data from "@/app/utils/duas.json";
 import * as morningEvening from "@/app/utils/morningEveningAdkhar.json";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Dimensions,
+  FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -15,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const PRIMARY = "#4A154B";
 const BG = "#F8F5FA";
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function Adkhar() {
   const router = useRouter();
@@ -32,6 +37,7 @@ export default function Adkhar() {
     [category],
   );
 
+  const listRef = useRef<FlatList>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [count, setCount] = useState(0);
 
@@ -49,6 +55,90 @@ export default function Adkhar() {
     typeof category === "string"
       ? category.charAt(0).toUpperCase() + category.slice(1)
       : "Adhkar";
+
+  // Scrolls the FlatList to a given page and updates state.
+  // Used by both the prev/next buttons and swipe end handling.
+  const goToIndex = (index: number) => {
+    const clamped = Math.max(0, Math.min(index, realData.length - 1));
+    listRef.current?.scrollToOffset({
+      offset: clamped * SCREEN_WIDTH,
+      animated: true,
+    });
+    setCurrentIndex(clamped);
+  };
+
+  // Fired when the user finishes a swipe gesture. Figures out which
+  // page we landed on from the scroll offset and syncs state to it.
+  const handleMomentumScrollEnd = (
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+  ) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const newIndex = Math.round(offsetX / SCREEN_WIDTH);
+    setCurrentIndex(newIndex);
+  };
+
+  const renderDuaPage = ({ item }: { item: any }) => {
+    const pageRepeat = Number(item?.repeat || 0);
+    const pageShowCounter = pageRepeat >= 50;
+    const isCurrentPage = item === currentDua;
+
+    return (
+      <View style={{ width: SCREEN_WIDTH }}>
+        <ScrollView
+          style={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.content}
+        >
+          <View style={styles.card}>
+            <Text style={styles.repeat}>Repeat {pageRepeat} times</Text>
+
+            <Text style={styles.arabic}>{item.arabic}</Text>
+
+            <Text style={styles.transliteration}>{item.transliteration}</Text>
+
+            <Text style={styles.translation}>{item.translation}</Text>
+
+            {/* Tasbih Counter — only wired up for the currently active page,
+                since `count` is shared state tied to currentIndex. */}
+            {pageShowCounter && (
+              <View style={styles.tasbihContainer}>
+                <Text style={styles.tasbihLabel}>Tasbih Counter</Text>
+
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[
+                    styles.tasbihButton,
+                    isCurrentPage && count >= pageRepeat && styles.tasbihDone,
+                  ]}
+                  onPress={() => {
+                    if (isCurrentPage && count < pageRepeat) {
+                      setCount((c) => c + 1);
+                    }
+                  }}
+                >
+                  <Text style={styles.tasbihCount}>
+                    {isCurrentPage ? count : 0}
+                  </Text>
+                  <Text style={styles.tasbihTarget}>/ {pageRepeat}</Text>
+                </TouchableOpacity>
+
+                {isCurrentPage && count >= pageRepeat && (
+                  <Text style={styles.completedText}>Completed ✓</Text>
+                )}
+
+                <TouchableOpacity
+                  style={styles.resetBtn}
+                  onPress={() => isCurrentPage && setCount(0)}
+                >
+                  <Text style={styles.resetText}>Reset Counter</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </View>
+    );
+  };
 
   if (!currentDua) {
     return (
@@ -82,56 +172,24 @@ export default function Adkhar() {
           </View>
         </View>
 
-        {/* Scrollable Content */}
-        <ScrollView
-          style={styles.scroll}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.content}
-        >
-          <View style={styles.card}>
-            <Text style={styles.repeat}>Repeat {repeat} times</Text>
-
-            <Text style={styles.arabic}>{currentDua.arabic}</Text>
-
-            <Text style={styles.transliteration}>
-              {currentDua.transliteration}
-            </Text>
-
-            <Text style={styles.translation}>{currentDua.translation}</Text>
-
-            {/* Tasbih Counter */}
-            {showCounter && (
-              <View style={styles.tasbihContainer}>
-                <Text style={styles.tasbihLabel}>Tasbih Counter</Text>
-
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  style={[
-                    styles.tasbihButton,
-                    count >= repeat && styles.tasbihDone,
-                  ]}
-                  onPress={() => {
-                    if (count < repeat) setCount((c) => c + 1);
-                  }}
-                >
-                  <Text style={styles.tasbihCount}>{count}</Text>
-                  <Text style={styles.tasbihTarget}>/ {repeat}</Text>
-                </TouchableOpacity>
-
-                {count >= repeat && (
-                  <Text style={styles.completedText}>Completed ✓</Text>
-                )}
-
-                <TouchableOpacity
-                  style={styles.resetBtn}
-                  onPress={() => setCount(0)}
-                >
-                  <Text style={styles.resetText}>Reset Counter</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </ScrollView>
+        {/* Swipeable Content */}
+        <FlatList
+          ref={listRef}
+          data={realData}
+          renderItem={renderDuaPage}
+          keyExtractor={(_, index) => String(index)}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={handleMomentumScrollEnd}
+          getItemLayout={(_, index) => ({
+            length: SCREEN_WIDTH,
+            offset: SCREEN_WIDTH * index,
+            index,
+          })}
+          initialScrollIndex={0}
+          style={{ flex: 1 }}
+        />
 
         {/* Fixed Bottom Controls */}
         <View style={styles.controls}>
@@ -141,7 +199,7 @@ export default function Adkhar() {
               styles.navButton,
               currentIndex === 0 && styles.disabledButton,
             ]}
-            onPress={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
+            onPress={() => goToIndex(currentIndex - 1)}
           >
             <Ionicons name="arrow-back" size={22} color="white" />
           </TouchableOpacity>
@@ -156,9 +214,7 @@ export default function Adkhar() {
               styles.navButton,
               currentIndex === realData.length - 1 && styles.disabledButton,
             ]}
-            onPress={() =>
-              setCurrentIndex((prev) => Math.min(prev + 1, realData.length - 1))
-            }
+            onPress={() => goToIndex(currentIndex + 1)}
           >
             <Ionicons name="arrow-forward" size={22} color="white" />
           </TouchableOpacity>
@@ -238,7 +294,6 @@ const styles = StyleSheet.create({
     fontSize: 32,
     lineHeight: 80,
     textAlign: "right",
-    // fontWeight: "800",
     fontFamily: "AmiriQuran",
   },
 

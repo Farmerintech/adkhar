@@ -1,17 +1,18 @@
 import {
-    createContext,
-    ReactNode,
-    useContext,
-    useEffect,
-    useState,
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
 } from "react";
 
 import {
-    AdhanVoice,
-    AppSettings,
-    DEFAULT_SETTINGS,
-    getSettings,
-    saveSettings,
+  AdhanVoice,
+  AppSettings,
+  DEFAULT_SETTINGS,
+  getSettings,
+  saveSettings,
 } from "@/app/utils/storage";
 
 type SettingsContextType = {
@@ -39,6 +40,10 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
 
+  // Mirrors `settings` synchronously so updateSetting can read the
+  // latest value even if called twice before a re-render commits.
+  const settingsRef = useRef<AppSettings>(DEFAULT_SETTINGS);
+
   useEffect(() => {
     loadSettings();
   }, []);
@@ -46,9 +51,12 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const loadSettings = async () => {
     try {
       const saved = await getSettings();
-      setSettings(saved ?? DEFAULT_SETTINGS);
+      const resolved = saved ?? DEFAULT_SETTINGS;
+      settingsRef.current = resolved;
+      setSettings(resolved);
     } catch (error) {
       console.log(error);
+      settingsRef.current = DEFAULT_SETTINGS;
       setSettings(DEFAULT_SETTINGS);
     } finally {
       setLoading(false);
@@ -56,16 +64,21 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const persistSettings = async (newSettings: AppSettings) => {
+    settingsRef.current = newSettings;
     setSettings(newSettings);
     await saveSettings(newSettings);
   };
 
+  // Reads from settingsRef (always current) instead of the `settings`
+  // closure variable, so back-to-back calls (e.g. two toggles tapped
+  // quickly) each build on the true latest state instead of a stale
+  // snapshot from when the component last rendered.
   const updateSetting = async <K extends keyof AppSettings>(
     key: K,
     value: AppSettings[K],
   ) => {
     const updated = {
-      ...settings,
+      ...settingsRef.current,
       [key]: value,
     };
 
@@ -75,20 +88,26 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const toggleMorningEvening = async () => {
     await updateSetting(
       "morningEveningNotification",
-      !settings.morningEveningNotification,
+      !settingsRef.current.morningEveningNotification,
     );
   };
 
   const togglePrayerNotification = async () => {
-    await updateSetting("prayerNotification", !settings.prayerNotification);
+    await updateSetting(
+      "prayerNotification",
+      !settingsRef.current.prayerNotification,
+    );
   };
 
   const toggleTahajjudReminder = async () => {
-    await updateSetting("tahajjudReminder", !settings.tahajjudReminder);
+    await updateSetting(
+      "tahajjudReminder",
+      !settingsRef.current.tahajjudReminder,
+    );
   };
 
   const toggleAdhkarReminder = async () => {
-    await updateSetting("adhkarReminder", !settings.adhkarReminder);
+    await updateSetting("adhkarReminder", !settingsRef.current.adhkarReminder);
   };
 
   const setAdhanVoice = async (voice: AdhanVoice) => {

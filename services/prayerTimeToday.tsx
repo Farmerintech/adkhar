@@ -1,3 +1,7 @@
+import {
+  ADHAN_CHANNEL_MAP,
+  ADHAN_SOUND_MAP,
+} from "@/app/context/notificationsContext";
 import { useSettings } from "@/app/context/settingsContext";
 
 import { CalculationMethod, Coordinates, Madhab, PrayerTimes } from "adhan";
@@ -14,6 +18,11 @@ const GOLD = "#D4AF37";
 
 const CARD_WIDTH = 105;
 const CARD_MARGIN = 12;
+
+// How many days ahead to pre-schedule notifications for.
+// This is what lets Subh (and everything else) fire even if
+// the user never opens the app in between.
+const DAYS_AHEAD = 7;
 
 type Prayer = {
   name: string;
@@ -170,6 +179,9 @@ export default function PrayerTimesToday() {
     const BrowserNotification = (globalThis as any).Notification;
     const delay = date.getTime() - Date.now();
 
+    // Web has no true background scheduling — this timer only
+    // fires if the tab stays open, which is a browser limitation,
+    // not something we can fix in app code.
     const timer = setTimeout(() => {
       new BrowserNotification(title, {
         body,
@@ -179,7 +191,24 @@ export default function PrayerTimesToday() {
     webNotificationTimers.current.push(timer);
   };
 
-  const schedulePrayerNotifications = async (prayer: PrayerTimes) => {
+  // Builds the 5 notification-worthy prayers (no Sunrise) for a
+  // single day's PrayerTimes object.
+  const buildNotificationPrayers = (prayer: PrayerTimes) => [
+    { name: "Fajr", date: prayer.fajr },
+    { name: "Dhuhr", date: prayer.dhuhr },
+    { name: "Asr", date: prayer.asr },
+    { name: "Maghrib", date: prayer.maghrib },
+    { name: "Isha", date: prayer.isha },
+  ];
+
+  // Schedules notifications for TODAY plus the next DAYS_AHEAD-1 days,
+  // all in one pass. This is what makes Subh (and everything else)
+  // reliable even if the user doesn't open the app tomorrow, or the
+  // day after — those notifications are already queued in the OS.
+  const scheduleUpcomingPrayerNotifications = async (
+    latitude: number,
+    longitude: number,
+  ) => {
     if (Platform.OS === "web") {
       clearWebNotifications();
     } else {
@@ -188,47 +217,50 @@ export default function PrayerTimesToday() {
 
     if (!settings.prayerNotification) return;
 
-    const soundMap = {
-      alafasy: "adhan11.wav",
-      sudais: "adhan22.wav",
-      muaiqly: "adhan33.wav",
-    };
+    const coordinates = new Coordinates(latitude, longitude);
+    const params = CalculationMethod.MuslimWorldLeague();
+    params.madhab = Madhab.Shafi;
 
-    const notificationPrayers = [
-      { name: "Fajr", date: prayer.fajr },
-      { name: "Dhuhr", date: prayer.dhuhr },
-      { name: "Asr", date: prayer.asr },
-      { name: "Maghrib", date: prayer.maghrib },
-      { name: "Isha", date: prayer.isha },
-    ];
+    const voice = settings.adhanVoice as keyof typeof ADHAN_SOUND_MAP;
+    const sound = ADHAN_SOUND_MAP[voice];
+    const channelId = ADHAN_CHANNEL_MAP[voice];
 
-    for (const item of notificationPrayers) {
-      if (item.date <= new Date()) continue;
+    for (let dayOffset = 0; dayOffset < DAYS_AHEAD; dayOffset++) {
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() + dayOffset);
 
-      const title = `🕌 ${item.name} Prayer`;
-      const body = `It is time for ${item.name} prayer.`;
+      const prayer = new PrayerTimes(coordinates, targetDate, params);
+      const notificationPrayers = buildNotificationPrayers(prayer);
 
-      if (Platform.OS === "web") {
-        await scheduleWebNotification({
-          title,
-          body,
-          date: item.date,
+      for (const item of notificationPrayers) {
+        if (item.date <= new Date()) continue;
+
+        const notifTitle = `🕌 ${item.name} Prayer`;
+        const body = `It is time for ${item.name} prayer.`;
+
+        if (Platform.OS === "web") {
+          await scheduleWebNotification({
+            title: notifTitle,
+            body,
+            date: item.date,
+          });
+
+          continue;
+        }
+
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: notifTitle,
+            body,
+            sound: sound as any, // used on iOS
+            ...(Platform.OS === "android" && { channelId }),
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            date: item.date,
+          },
         });
-
-        continue;
       }
-
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title,
-          body,
-          sound: soundMap[settings.adhanVoice as keyof typeof soundMap] as any,
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DATE,
-          date: item.date,
-        },
-      });
     }
   };
 
@@ -239,6 +271,7 @@ export default function PrayerTimesToday() {
       const params = CalculationMethod.MuslimWorldLeague();
       params.madhab = Madhab.Shafi;
 
+      // Today's times, just for the on-screen card display.
       const prayer = new PrayerTimes(coordinates, new Date(), params);
 
       const prayerList = buildPrayerList(prayer);
@@ -247,7 +280,9 @@ export default function PrayerTimesToday() {
       findNextPrayer(prayerList);
 
       await updateLocationName(latitude, longitude);
-      await schedulePrayerNotifications(prayer);
+
+      // Separately, (re)schedule the full week of notifications.
+      await scheduleUpcomingPrayerNotifications(latitude, longitude);
     } catch (error) {
       console.log("Prayer Error:", error);
     }

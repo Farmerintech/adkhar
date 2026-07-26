@@ -21,6 +21,23 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// Single source of truth for adhan voice -> sound file.
+// Import this from wherever you schedule notifications too,
+// so the channelId/sound always match.
+export const ADHAN_SOUND_MAP = {
+  alafasy: "adhan11.wav",
+  sudais: "adhan22.wav",
+  muaiqly: "adhan33.wav",
+} as const;
+
+// Android channel id per voice. Channels are immutable once created,
+// so each voice needs its own permanent channel id (don't reuse "default").
+export const ADHAN_CHANNEL_MAP = {
+  alafasy: "prayer-alafasy",
+  sudais: "prayer-sudais",
+  muaiqly: "prayer-muaiqly",
+} as const;
+
 type NotificationContextType = {
   notification: Notifications.Notification | null;
 };
@@ -63,18 +80,30 @@ export function NotificationProvider({ children }: Props) {
         }
 
         if (Platform.OS === "android") {
-          await Notifications.setNotificationChannelAsync("default", {
-            name: "default",
-            importance: Notifications.AndroidImportance.MAX,
-            vibrationPattern: [0, 250, 250, 250],
-            lightColor: "#4A154B",
-            sound: "default",
-          });
+          // Create one channel per adhan voice, each with its sound
+          // baked in at creation time. Do this for ALL voices up front
+          // (not just the currently selected one) so switching voices
+          // later doesn't require a fresh channel that never gets created.
+          for (const voice of Object.keys(
+            ADHAN_SOUND_MAP,
+          ) as (keyof typeof ADHAN_SOUND_MAP)[]) {
+            await Notifications.setNotificationChannelAsync(
+              ADHAN_CHANNEL_MAP[voice],
+              {
+                name: `Adhan - ${voice}`,
+                importance: Notifications.AndroidImportance.MAX,
+                vibrationPattern: [0, 250, 250, 250],
+                lightColor: "#4A154B",
+                sound: ADHAN_SOUND_MAP[voice],
+              },
+            );
+          }
         }
       } catch (error) {
         console.log("Error setting up notifications:", error);
       }
     };
+
     setupNotifications();
 
     // Notification received while app is open

@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSettings } from "../context/settingsContext";
 import { useAuth } from "../context/userContext";
+import type { AdhanVoice } from "../utils/storage";
 
 const PRIMARY = "#4A154B";
 const GOLD = "#D4AF37";
@@ -32,6 +33,7 @@ export default function SettingsScreen() {
     toggleMorningEvening,
     togglePrayerNotification,
     toggleTahajjudReminder,
+    toggleAdhkarReminder,
     setAdhanVoice,
   } = useSettings();
 
@@ -77,30 +79,40 @@ export default function SettingsScreen() {
     [],
   );
 
-  // Clean up sound on component unmount
-  useEffect(() => {
-    return () => {
-      if (playerRef.current) {
+  // Fully releases whatever player is currently held in playerRef,
+  // instead of just pausing it. Safe to call even if nothing is playing.
+  const releaseCurrentPlayer = () => {
+    if (playerRef.current) {
+      try {
         playerRef.current.pause();
         if (typeof playerRef.current.remove === "function") {
           playerRef.current.remove();
         }
-        playerRef.current = null;
+      } catch (error) {
+        console.log("Error releasing audio player:", error);
       }
+      playerRef.current = null;
+    }
+  };
+
+  // Clean up sound on component unmount
+  useEffect(() => {
+    return () => {
+      releaseCurrentPlayer();
     };
   }, []);
 
   const playAdhanSample = async (voiceKey: string, source: any) => {
     try {
       if (playingVoiceKey === voiceKey && playerRef.current) {
-        playerRef.current.pause();
+        releaseCurrentPlayer();
         setPlayingVoiceKey(null);
         return;
       }
 
-      if (playerRef.current) {
-        playerRef.current.pause();
-      }
+      // Always fully release the previous player before creating a
+      // new one — pausing alone left the old instance un-freed.
+      releaseCurrentPlayer();
 
       setLoadingVoiceKey(voiceKey);
 
@@ -254,6 +266,13 @@ export default function SettingsScreen() {
           value={settings.tahajjudReminder}
           onPress={toggleTahajjudReminder}
         />
+        <SettingRow
+          icon="book-outline"
+          title="Adhkar Reminder"
+          subtitle="Reminder to recite your daily adhkar"
+          value={settings.adhkarReminder}
+          onPress={toggleAdhkarReminder}
+        />
 
         {/* ADHAN VOICES */}
         <Text style={styles.sectionTitle}>Adhan Voice</Text>
@@ -266,7 +285,7 @@ export default function SettingsScreen() {
               key={voice.key}
               activeOpacity={0.8}
               style={[styles.voiceCard, selected && styles.voiceSelected]}
-              onPress={() => setAdhanVoice(voice.key as any)}
+              onPress={() => setAdhanVoice(voice.key as AdhanVoice)}
             >
               <TouchableOpacity
                 style={styles.playButton}
@@ -310,7 +329,7 @@ export default function SettingsScreen() {
         <View style={styles.infoCard}>
           <Ionicons name="moon" size={28} color={GOLD} />
           <Text style={styles.appName}>Adkhar</Text>
-          <Text style={styles.version}>Version 1.0.0</Text>
+          <Text style={styles.version}>Version 1.0.1</Text>
           <Text style={styles.infoText}>
             Your companion for Quran, Adhkar, Prayer Times and Islamic
             reminders.

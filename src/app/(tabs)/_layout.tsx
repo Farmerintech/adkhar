@@ -77,7 +77,19 @@ export default function TabLayout() {
           ),
         }}
       />
-
+      <Tabs.Screen
+        name="ruqyah"
+        options={{
+          title: "Ruqyah",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons
+              name="shield-checkmark-outline"
+              color={color}
+              size={size}
+            />
+          ),
+        }}
+      />
       <Tabs.Screen
         name="settings"
         options={{
