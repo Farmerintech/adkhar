@@ -24,7 +24,7 @@ export default function Ruqyah() {
 
   return (
     <SafeAreaView style={styles.container} edges={["left", "right", "top"]}>
-      <StatusBar barStyle="light-content" backgroundColor={PRIMARY} />
+      <StatusBar barStyle="light-content" />
 
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
@@ -36,38 +36,41 @@ export default function Ruqyah() {
           <Text style={styles.headerSubtitle}>Choose a topic to explore</Text>
         </View>
       </View>
+      <View style={{ backgroundColor: BG }}>
+        <FlatList
+          data={categoryKeys}
+          keyExtractor={(item) => item}
+          contentContainerStyle={styles.list}
+          renderItem={({ item }) => {
+            const topicCount = getTopicsForCategory(item, "en").length;
 
-      <FlatList
-        data={categoryKeys}
-        keyExtractor={(item) => item}
-        contentContainerStyle={styles.list}
-        renderItem={({ item }) => {
-          const topicCount = getTopicsForCategory(item, "en").length;
+            return (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.card}
+                onPress={() =>
+                  router.push(`/(screens)/ruqyah?category=${item}`)
+                }
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.cardTitle}>
+                    {CATEGORY_LABELS[item] ?? item}
+                  </Text>
+                  <Text style={styles.cardSubtitle}>{topicCount} articles</Text>
+                </View>
 
-          return (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              style={styles.card}
-              onPress={() => router.push(`/(screens)/ruqyah?category=${item}`)}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>
-                  {CATEGORY_LABELS[item] ?? item}
-                </Text>
-                <Text style={styles.cardSubtitle}>{topicCount} articles</Text>
-              </View>
-
-              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-            </TouchableOpacity>
-          );
-        }}
-      />
+                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: BG },
+  container: { flex: 1, backgroundColor: PRIMARY },
   header: {
     backgroundColor: PRIMARY,
     padding: 20,

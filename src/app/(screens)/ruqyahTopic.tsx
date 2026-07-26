@@ -33,7 +33,7 @@ export default function RuqyahTopicScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["left", "right", "top"]}>
-      <StatusBar barStyle="light-content" backgroundColor={PRIMARY} />
+      <StatusBar barStyle="light-content" />
 
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
@@ -92,7 +92,7 @@ export default function RuqyahTopicScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: BG },
+  container: { flex: 1, backgroundColor: PRIMARY },
   emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: {
     backgroundColor: PRIMARY,
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     marginRight: 14,
   },
   headerTitle: { flex: 1, color: "white", fontSize: 18, fontWeight: "800" },
-  content: { padding: 20, paddingBottom: 40 },
+  content: { padding: 20, paddingBottom: 40, backgroundColor: BG },
   blockHeader: {
     fontSize: 17,
     fontWeight: "800",
